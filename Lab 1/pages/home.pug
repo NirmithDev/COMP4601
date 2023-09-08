@@ -1,0 +1,23 @@
+doctype html
+html(lang='en')
+  head
+    meta(charset='UTF-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1.0')
+    title Search Page
+    link(rel='stylesheet', href='/css/style.css')
+  body
+    a(href='/') Search Products
+    #searchContainer
+      form#searchBox(method='GET', action='/searchProduct')
+        input(type='text', name='query', placeholder='Enter your search query')
+        label(for='searchType') Search Type:
+        select#searchType(name='searchType')
+          option(value='all') All Products
+          option(value='inStock') In Stock Only
+        button(type='submit') Search
+    #outputContainer
+    if error
+      p.error= error
+    else
+      each a in searchData 
+        p #{a.name}
