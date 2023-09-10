@@ -5,6 +5,9 @@ const app = express();
 const pug = require("pug");
 
 app.use('/css',express.static(__dirname+'/style'))
+//middleware
+app.use(express.urlencoded({ extended: true }));
+
 app.set('views', './pages');
 app.set('view engine', 'pug');
 
@@ -20,11 +23,9 @@ for(a=0;a<data.length;a++){
     // Add the "reviews" property to the movie object
     products.reviews = [
         {
-            Author: 'John Doe',
-            Rating: 4,
-            Comment: 'Great movie!'
+            Rating: 4
         }
-        // Add more review objects as needed
+        
     ];
     
     dataUpdate.push(products)
@@ -89,7 +90,68 @@ app.get('/searchProduct',(req,res)=>{
     }
 })
 
+//load up the product detail page
+app.get('/product/:pid',(req,res)=>{
+    const productId = req.params.pid;
+    //console.log(req.query.format)
+    format = req.query.format || "html"
+    const product = dataUpdate.find(item => item.id.toString() === productId);
+    console.log(product)
+    if(!product){
+        res.status(404).send("Product ID not found in store")
+    }else if(format === 'json'){
+        res.status(200).send(product)
+    }else if(format === 'html'){
+        res.status(200).render('productDetails',{product:product});
+    }
+    else{
+        res.status(406).send('This format is not supported');
+    }
+})
 
+//load add product page
+app.get('/addProduct',(req,res)=>{
+    res.status(200).render('addProduct')
+})
+
+function getID(){
+    const lastObj = dataUpdate[dataUpdate.length - 1];
+    //console.log(lastObj.id)
+    return lastObj.id;
+}
+
+//post request to add Products
+app.post('/submit',(req,res)=>{
+    console.log(req.body)
+    //store it to a new object before appending to dataUpdate
+    //get latest ID from dataUpdate
+    let newID = getID()
+    newID =  newID+1
+    let newProduct = {
+        name: req.body.name,
+        price: parseInt(req.body.price),
+        dimensions: {x:req.body.x,y:req.body.y,z:req.body.z},
+        stock:parseInt(req.body.stock),
+        id:newID,
+        reviews:[]
+    }
+    console.log(newProduct)
+    //console.log(req)
+    dataUpdate.push(newProduct)
+    res.status(200).render('addProduct')
+})
+
+app.post('/sendNewReview/:pid',(req,res)=>{
+    console.log(req.body)
+    const productId = req.params.pid;
+    console.log(productId)
+    const product = dataUpdate.find(item => item.id.toString() === productId);
+    console.log(product)
+    newRating = {Rating:parseInt(req.body.rating)};
+    product.reviews.push(newRating);
+    console.log(product)
+    res.status(200).redirect(`/product/${productId}`)
+})
 
 app.listen(3000)
 console.log("listening on port 3000")

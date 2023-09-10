@@ -8,3 +8,27 @@
     justify-content: center;
     margin: 20px;
 }
+
+#reviews{
+    border: 2px solid white;
+}
+
+#reviews p{
+    margin-left: 20px;
+}
+
+#reviewContents{
+    border: 2px solid rgba(255, 255, 255, 0.405);
+    margin: 20px;
+}
+
+#xCord,#yCord,#zCord{
+    display: flex;
+    padding: 20px;
+}
+#xCord p,#yCord p,#zCord p{
+    margin-right: 20px;
+}
+a{
+    padding-right: 10px;
+}
