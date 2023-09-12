@@ -22,9 +22,9 @@ for(a=0;a<data.length;a++){
     
     // Add the "reviews" property to the movie object
     products.reviews = [
-        {
+        /*{
             Rating: 4
-        }
+        }*/
         
     ];
     
@@ -37,7 +37,7 @@ app.get('/',(req,res)=>{
     res.status(200).render('home',{searchData:dataUpdate});
 })
 
-app.get('/searchProduct',(req,res)=>{
+app.get('/products',(req,res)=>{
     console.log(req.query);
     if(req.query.query.length==0){
         //console.log(req.query.searchType);
@@ -75,15 +75,21 @@ app.get('/searchProduct',(req,res)=>{
         //in stock 
         else{
             let stocked = false;
+            let notStocked = false;
             for (const a of dataUpdate) {
-                if(a.name.includes(req.query.query) && a.stock>0){
+                if(a.name.toLowerCase().includes(req.query.query) && a.stock>0){
                     itemMatch.push(a);
                     stocked = true;
+                }else if(a.name.includes(req.query.query)){
+                    notStocked = true
                 }
             }
             if(itemMatch.length>0){
                 res.status(200).render('home',{searchData:itemMatch});
-            }else{
+            }else if(notStocked){
+                res.status(200).render('home', { error: 'Item Not Stocked' })
+            }
+            else{
                 res.status(200).render('home', { error: 'No matching products found' })
             }
         }
@@ -91,7 +97,7 @@ app.get('/searchProduct',(req,res)=>{
 })
 
 //load up the product detail page
-app.get('/product/:pid',(req,res)=>{
+app.get('/products/:pid',(req,res)=>{
     const productId = req.params.pid;
     //console.log(req.query.format)
     format = req.query.format || "html"
@@ -99,10 +105,26 @@ app.get('/product/:pid',(req,res)=>{
     console.log(product)
     if(!product){
         res.status(404).send("Product ID not found in store")
-    }else if(format === 'json'){
-        res.status(200).send(product)
-    }else if(format === 'html'){
-        res.status(200).render('productDetails',{product:product});
+    }
+    else if(product){
+        res.format({
+            'text/plain': function () {
+              res.status(200).send(product);
+            },
+          
+            'text/html': function () {
+                res.status(200).render('productDetails',{product:product});
+            },
+          
+            'application/json': function () {
+                res.status(200).send(product)
+            },
+          
+            default: function () {
+              // log the request and respond with 406
+              res.status(406).send('Not Acceptable')
+            }
+        })
     }
     else{
         res.status(406).send('This format is not supported');
@@ -114,6 +136,16 @@ app.get('/addProduct',(req,res)=>{
     res.status(200).render('addProduct')
 })
 
+//load reviews for the page when it is clicked
+app.get('/reviews/:rid',(req,res)=>{
+    console.log(req.params.rid)
+    //find data that matches the id
+    const product = dataUpdate.find(item => item.id.toString() === req.params.rid);
+    console.log(product)
+    res.status(200).render('review',{product:product});
+})
+
+
 function getID(){
     const lastObj = dataUpdate[dataUpdate.length - 1];
     //console.log(lastObj.id)
@@ -121,7 +153,7 @@ function getID(){
 }
 
 //post request to add Products
-app.post('/submit',(req,res)=>{
+app.post('/products',(req,res)=>{
     console.log(req.body)
     //store it to a new object before appending to dataUpdate
     //get latest ID from dataUpdate
@@ -135,22 +167,28 @@ app.post('/submit',(req,res)=>{
         id:newID,
         reviews:[]
     }
-    console.log(newProduct)
+    //console.log(newProduct)
     //console.log(req)
     dataUpdate.push(newProduct)
-    res.status(200).render('addProduct')
+    res.status(200).render('addProduct',{error:" New product has been added "})
 })
 
-app.post('/sendNewReview/:pid',(req,res)=>{
-    console.log(req.body)
+app.post('/newReview/:pid',(req,res)=>{
+    //console.log(req.body)
     const productId = req.params.pid;
-    console.log(productId)
+    //console.log(productId)
     const product = dataUpdate.find(item => item.id.toString() === productId);
-    console.log(product)
-    newRating = {Rating:parseInt(req.body.rating)};
-    product.reviews.push(newRating);
-    console.log(product)
-    res.status(200).redirect(`/product/${productId}`)
+    //console.log(product)
+    
+    console.log(req.body.rating)
+    if(req.body.rating){
+        newRating = {Rating:parseInt(req.body.rating)};
+        product.reviews.push(newRating);
+        //console.log(product)
+        res.status(200).redirect(`/products/${productId}`)
+    }else{
+        res.status(200).redirect(`/products/${productId}`)
+    }
 })
 
 app.listen(3000)

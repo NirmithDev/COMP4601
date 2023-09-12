@@ -10,10 +10,11 @@
 3. A way to retrieve and view a specific product (i.e., by ID), which must show all of that product's associated information. The server should support the client requesting either
    JSON or HTML representations.
 
-   DONE
+   In progress
 
 4. A way to add a review for a specific product. For now, a review for a product can simply be a rating from 1-10.
 
-   IN PROGRESS
+   DONE
 
 5. A way to retrieve and view only the REVIEWS for a specific product. The server should support the client requesting either JSON or HTML representations.
+   DONE

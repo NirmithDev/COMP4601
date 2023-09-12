@@ -10,7 +10,7 @@ html(lang='en')
       a(href='/') Return Home
     p Add New Product
     #addProductForm
-      form(id='addForm' action='/submit', method='POST')
+      form(id='addForm' action='/products', method='POST')
         label Name
         input(type='text', name='name', placeholder='Enter your product name' required)
         br
@@ -32,3 +32,5 @@ html(lang='en')
             p z
             input(type='number', name='z', placeholder='z' required)
         button(type='submit') Add Product
+        if error
+          p.error= error
