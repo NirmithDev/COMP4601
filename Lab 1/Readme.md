@@ -1,3 +1,5 @@
+## Requirement
+
 1. A way to search for products. You must support the ability to search by name. You must also support the ability to search for all products or only products that are in stock. It
    should be possible to specify both a name search parameter and an all/in-stock search.
 
@@ -18,3 +20,8 @@
 
 5. A way to retrieve and view only the REVIEWS for a specific product. The server should support the client requesting either JSON or HTML representations.
    DONE
+
+
+Graded and approved by TA 
+### Grade 5/5
+View requirement pls check requirement folder
