@@ -1,0 +1,17 @@
+{
+  "name": "lab-1",
+  "version": "1.0.0",
+  "description": "LAB 1 for COMP 4601",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon server.js"
+  },
+  "author": "Nirmith Victor D'Almeida",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "nodemon": "^3.0.1",
+    "pug": "^3.0.2"
+  }
+}

@@ -1,0 +1,34 @@
+doctype html
+html(lang='en')
+  head
+    meta(charset='UTF-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1.0')
+    title product #{product.name}
+    link(rel='stylesheet', href='/css/style.css')
+  body
+    p
+      a(href='/') Return Home
+    #productDetails
+      #id ID of Item: #{product.id}
+      #name
+        p Name: #{product.name}
+      #price
+        p Price: #{product.price}
+      #dimensions
+        p Dimensions 
+        p x : #{product.dimensions.x}, y : #{product.dimensions.y}, z : #{product.dimensions.z}
+      #stock
+        p Stock: #{product.stock}
+      #reviews
+        a(href="/reviews/"+product.id)
+          p Reviews:
+          each a in product.reviews 
+            #reviewContents
+              p Rating : #{a.Rating}
+      #insertReviews
+        p Add Reviews
+        form#addNewReviews(method='POST', action=`/newReview/${product.id}`)
+          //input(type='hidden', name='productID', value=product.id)
+          input(type='number', name='rating', placeholder='Enter your Rating (from 1 to 10)', min='0', max='10', style='width: 20em;margin-bottom:20px;')
+          br
+          button(type='submit') Submit Review
