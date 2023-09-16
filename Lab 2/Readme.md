@@ -18,3 +18,8 @@
 
 5. A way to retrieve and view only the REVIEWS for a specific product. The server should support the client requesting either JSON or HTML representations.
    DONE
+
+## Lab 2
+
+1. for Orders implement a form to add said product to the order collection
+2. Maybe use session tokens

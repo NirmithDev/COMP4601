@@ -20,7 +20,7 @@ html(lang='en')
       #stock
         p Stock: #{product.stock}
       #reviews
-        a(href="/reviews/"+product.id)
+        a(href="/productId="+product.id+"/reviews")
           p Reviews:
           each a in product.reviews 
             #reviewContents

@@ -3,13 +3,21 @@ const bodyParser = require('body-parser');
 const path=require('path')
 const app = express();
 const pug = require("pug");
-
+const { MongoClient } = require("mongodb");
 app.use('/css',express.static(__dirname+'/style'))
+let db;
+
 //middleware
 app.use(express.urlencoded({ extended: true }));
 
 app.set('views', './pages');
 app.set('view engine', 'pug');
+
+let orderCollection = []
+//when user adds a order it just updates it and we display it
+// when i click on the cart button it leads to a order page and 
+// get cart button page 
+
 
 //take in all the data from the products.json file
 let data=require('./products.json')
@@ -32,26 +40,33 @@ for(a=0;a<data.length;a++){
 }
 //console.log(dataUpdate)
 //default home page
-app.get('/',(req,res)=>{
-    //console.log(dataUpdate.length)
-    res.status(200).render('home',{searchData:dataUpdate});
+app.get('/',async (req,res)=>{
+    const db = client.db(dbName);
+    const collection = db.collection(collectionName);
+
+    const products = await collection.find({}).toArray();
+    console.log(products)
+    res.status(200).render('home',{searchData:products});
 })
 
-app.get('/products',(req,res)=>{
+app.get('/products',async (req,res)=>{
     console.log(req.query);
+    const db = client.db(dbName);
+    const collection = db.collection(collectionName);
+    
     if(req.query.query.length==0){
         //console.log(req.query.searchType);
         if(req.query.searchType==='all'){
-            res.status(200).render('home',{searchData:dataUpdate});
+            const products = await collection.find({}).toArray();
+            res.status(200).render('home',{searchData:products});
         }else{
             //check for only in stock items
             //create a collection to contain this
-            const inStockItems = []
-            for (const a of dataUpdate) {
-                if(a.stock!==0){
-                    inStockItems.push(a);
-                }
-            }
+            const condition = { stock: { $gt: 0 } };
+
+            // Find documents matching the condition
+            const inStockItems = await collection.find(condition).toArray();
+            //console.log(inStockItems)
             res.status(200).render('home',{searchData:inStockItems});
         }
     }else{
@@ -59,38 +74,44 @@ app.get('/products',(req,res)=>{
         //check the dropdown options
         //all products
         //collections match requirement
-        const itemMatch = []
         if(req.query.searchType==='all'){
-            for (const a of dataUpdate) {
-                if(a.name.toLowerCase().includes(req.query.query.toLowerCase())){
-                    itemMatch.push(a);
-                }
-            }
-            if(itemMatch.length>0){
-                res.status(200).render('home',{searchData:itemMatch});
-            }else{
-                res.status(200).render('home', { error: 'No matching products found' })
-            }
+            const query = {
+                name: { $regex: new RegExp(req.query.query, 'i') } // Case-insensitive search
+              };
+          
+              const matchingItems = await collection.find(query).toArray();
+          
+              if (matchingItems.length > 0) {
+                res.status(200).render('home', { searchData: matchingItems });
+              } else {
+                res.status(200).render('home', { error: 'No matching products found' });
+              }
         }
         //in stock 
         else{
-            let stocked = false;
-            let notStocked = false;
-            for (const a of dataUpdate) {
-                if(a.name.toLowerCase().includes(req.query.query) && a.stock>0){
-                    itemMatch.push(a);
-                    stocked = true;
-                }else if(a.name.includes(req.query.query)){
-                    notStocked = true
+            const query = {
+                name: { $regex: new RegExp(req.query.query, 'i') },
+                stock: { $gt: 0 } // Stock greater than 0
+              };
+          
+              // Find documents matching the query
+              const matchingItems = await collection.find(query).toArray();
+          
+              if (matchingItems.length > 0) {
+                res.status(200).render('home', { searchData: matchingItems });
+              } else {
+                // Check if there are products with the name but not in stock
+                const notStockedQuery = {
+                  name: { $regex: new RegExp(req.query.query, 'i') },
+                  stock: 0
+                };
+                const notStockedItems = await collection.find(notStockedQuery).toArray();
+          
+                if (notStockedItems.length > 0) {
+                  res.status(200).render('home', { error: 'Item Not Stocked' });
+                } else {
+                  res.status(200).render('home', { error: 'No matching products found' });
                 }
-            }
-            if(itemMatch.length>0){
-                res.status(200).render('home',{searchData:itemMatch});
-            }else if(notStocked){
-                res.status(200).render('home', { error: 'Item Not Stocked' })
-            }
-            else{
-                res.status(200).render('home', { error: 'No matching products found' })
             }
         }
     }
@@ -98,6 +119,9 @@ app.get('/products',(req,res)=>{
 
 //load up the product detail page
 app.get('/products/:pid',(req,res)=>{
+    const db = client.db(dbName);
+    const collection = db.collection(collectionName);
+    //console.log(collection)
     const productId = req.params.pid;
     //console.log(req.query.format)
     format = req.query.format || "html"
@@ -136,7 +160,7 @@ app.get('/addProduct',(req,res)=>{
 })
 
 //load reviews for the page when it is clicked
-app.get('/reviews/:rid',(req,res)=>{
+app.get('/productId=:rid/reviews',(req,res)=>{
     console.log(req.params.rid)
     //find data that matches the id
     const product = dataUpdate.find(item => item.id.toString() === req.params.rid);
@@ -189,6 +213,38 @@ app.post('/newReview/:pid',(req,res)=>{
         res.status(200).redirect(`/products/${productId}`)
     }
 })
+
+//connecting to local DB
+//const { MongoClient } = require("mongodb");
+
+// Define the MongoDB connection URL and database name
+const url = "mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.10.6";
+const dbName = "storeDB";
+const collectionName = 'products';
+// Create a MongoClient instance
+const client = new MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true });
+
+// Use async/await for better handling of asynchronous operations
+async function main() {
+  try {
+    // Connect to the MongoDB server
+    await client.connect();
+    console.log("Connected to database.");
+
+    // Access the database
+    const db = client.db(dbName);
+    //const collection = db.collection(collectionName);
+
+    //const documents = await collection.find({}).toArray();
+    //console.log('Documents in the collection:', documents);
+  } catch (err) {
+    console.error("Error connecting to the database:", err);
+  }
+}
+
+// Call the main function to start the connection
+main();
+
 
 app.listen(3000)
 console.log("listening on port 3000")

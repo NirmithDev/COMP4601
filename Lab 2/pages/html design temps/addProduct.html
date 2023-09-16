@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>add product page</title>
+    <link rel="stylesheet" href="../style/style.css">
+</head>
+<body>
+    <p><a href="/">Return Home</a></p>
+    <p>Add New Product</p>
+    <div id="addProductForm">
+        <form id="addForm" action="/submit" method="POST">
+            <label>Name</label>
+            <input type="text" name="name" placeholder="Enter your product name">
+            <br>
+            <label>Price </label>
+            <input type="number" name="price" min=0 placeholder="Enter your product price">
+            <br>
+            <label>Stock</label>
+            <input type="number" name="stock" placeholder="Enter your product stock" min="0">
+            <br>
+            <p>Dimensions</p>
+            <div style="display: flex;">
+                <div id="xCord">
+                    <p>x</p>
+                    <input type="number" name="x" placeholder="x">
+                </div>
+                <div id="yCord">
+                    <p>y</p>
+                    <input type="number" name="y" placeholder="y">
+                </div>
+                <div id="zCord">
+                    <p>z</p>
+                    <input type="number" name="z" placeholder="z">
+                </div>
+            </div>
+
+            <button type="submit">Search</button>
+        </form>
+    </div>
+</body>
+</html>
