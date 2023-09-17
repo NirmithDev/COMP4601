@@ -34,7 +34,7 @@ async function main() {
     // Modify the product data to ensure reviews field is an empty array
     const modifiedProductsData = productsData.map(product => ({
       ...product,
-      reviews: [{"rating":2}], // Ensure an empty array for reviews
+      reviews: [], // Ensure an empty array for reviews
     }));
 
     // Insert modified data into the "products" collection

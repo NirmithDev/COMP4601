@@ -3,7 +3,7 @@ const bodyParser = require('body-parser');
 const path=require('path')
 const app = express();
 const pug = require("pug");
-const { MongoClient } = require("mongodb");
+const { MongoClient, ObjectId } = require("mongodb");
 app.use('/css',express.static(__dirname+'/style'))
 let db;
 
@@ -117,42 +117,47 @@ app.get('/products',async (req,res)=>{
     }
 })
 
-//load up the product detail page
-app.get('/products/:pid',(req,res)=>{
-    const db = client.db(dbName);
-    const collection = db.collection(collectionName);
-    //console.log(collection)
-    const productId = req.params.pid;
-    //console.log(req.query.format)
-    format = req.query.format || "html"
-    const product = dataUpdate.find(item => item.id.toString() === productId);
-    console.log(product)
-    if(!product){
-        res.status(404).send("Product ID not found in store")
+//load up the product detail page - DB implemented
+app.get('/products/:id', async (req, res) => {
+    try {
+      const requestedProductId = req.params.id; // Get the product ID from the URL
+  
+      const db = client.db(dbName);
+      const collection = db.collection(collectionName);
+  
+      // Find the product by _id
+      const product = await collection.findOne({ _id: new ObjectId(requestedProductId) });
+  
+      if (!product) {
+        res.status(404).send("Product ID not found in store");
+        return;
+      }
+  
+      const format = req.query.format || "html";
+  
+      res.format({
+        'text/plain': function () {
+          res.status(200).send(product);
+        },
+        
+        'text/html': function () {
+          res.status(200).render('productDetails', { product: product });
+        },
+        
+        'application/json': function () {
+          res.status(200).send(product);
+        },
+        
+        default: function () {
+          res.status(406).send('Not Acceptable');
+        }
+      });
+    } catch (err) {
+      console.error('Error:', err);
+      res.status(500).send('Internal Server Error');
     }
-    else if(product){
-        res.format({
-            'text/plain': function () {
-              res.status(200).send(product);
-            },
-          
-            'text/html': function () {
-                res.status(200).render('productDetails',{product:product});
-            },
-          
-            'application/json': function () {
-                res.status(200).send(product)
-            },
-          
-            default: function () {
-              res.status(406).send('Not Acceptable')
-            }
-        })
-    }
-    else{
-        res.status(406).send('This format is not supported');
-    }
-})
+  });
+  
 
 //load add product page
 app.get('/addProduct',(req,res)=>{
@@ -160,57 +165,95 @@ app.get('/addProduct',(req,res)=>{
 })
 
 //load reviews for the page when it is clicked
-app.get('/productId=:rid/reviews',(req,res)=>{
-    console.log(req.params.rid)
-    //find data that matches the id
-    const product = dataUpdate.find(item => item.id.toString() === req.params.rid);
-    console.log(product)
-    res.status(200).render('review',{product:product});
-})
-
-
-function getID(){
-    const lastObj = dataUpdate[dataUpdate.length - 1];
-    //console.log(lastObj.id)
-    return lastObj.id;
-}
-
-//post request to add Products
-app.post('/products',(req,res)=>{
-    console.log(req.body)
-    //store it to a new object before appending to dataUpdate
-    //get latest ID from dataUpdate
-    let newID = getID()
-    newID =  newID+1
-    let newProduct = {
-        name: req.body.name,
-        price: parseFloat(parseFloat(req.body.price).toFixed(2)),
-        dimensions: {x:req.body.x,y:req.body.y,z:req.body.z},
-        stock:parseInt(req.body.stock),
-        id:newID,
-        reviews:[]
-    }
-    //console.log(newProduct)
-    //console.log(req)
-    dataUpdate.push(newProduct)
-    res.status(200).render('addProduct',{error:" New product has been added "})
-})
-
-app.post('/newReview/:pid',(req,res)=>{
-    //console.log(req.body)
-    const productId = req.params.pid;
-    //console.log(productId)
-    const product = dataUpdate.find(item => item.id.toString() === productId);
+app.get('/productId=:rid/reviews',async (req,res)=>{
+    productId = req.params.rid
+    collection = db.collection(collectionName);
+    const product = await collection.findOne({ _id: new ObjectId(productId) });
     //console.log(product)
+    if (!product) {
+      res.status(404).send("Product ID not found in store");
+      return;
+    }
+
+    res.status(200).render('review', { product: product });
+})
+
+
+async function getLatestID() {
+    try {
+      collection = db.collection(collectionName);
+  
+      const latestProduct = await collection.find().sort({ id: -1 }).limit(1).toArray();
+      
+      if (latestProduct.length === 0) {
+        return 0;
+      }
+  
+      return latestProduct[0].id;
+    } catch (error) {
+      console.error('Error fetching latest ID:', error);
+      return -1;
+    }
+}
+  
+// for adding new products - comment for ease in rework and visibility
+app.post('/products', async (req, res) => {
+    try {
+        const newID = await getLatestID() + 1;
+  
+        const db = client.db(dbName);
+        const collection = db.collection(collectionName);
+  
+        const newProduct = {
+            name: req.body.name,
+            price: parseFloat(parseFloat(req.body.price).toFixed(2)),
+            dimensions: { x: req.body.x, y: req.body.y, z: req.body.z },
+            stock: parseInt(req.body.stock),
+            id: newID,
+            reviews: [],
+        };
+  
+      // Insert the new product into the MongoDB collection
+        await collection.insertOne(newProduct);
+  
+        res.status(200).render('addProduct', { error: 'New product has been added' });
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).send('Internal Server Error');
+    }
+});
+
+app.post('/newReview/:pid',async (req,res)=>{
+    //console.log(req.body)
+    try {
+        const productId = req.params.pid;
+        collection = db.collection(collectionName);
     
-    console.log(req.body.rating)
-    if(req.body.rating){
-        newRating = {Rating:parseInt(req.body.rating)};
-        product.reviews.push(newRating);
-        //console.log(product)
-        res.status(200).redirect(`/products/${productId}`)
-    }else{
-        res.status(200).redirect(`/products/${productId}`)
+        // Find the product by _id
+        const product = await collection.findOne({ _id: new ObjectId(productId) });
+    
+        if (!product) {
+            res.status(404).send("Product ID not found in store");
+            return;
+        }
+    
+        const newRating = parseInt(req.body.rating);
+        
+        // Create a new review object and push it to the product's reviews array
+        const newReview = { Rating: newRating };
+        product.reviews.push(newReview);
+    
+        // Update the product's reviews in the MongoDB collection
+        await collection.updateOne(
+            { _id: new ObjectId(productId) },
+            { $set: { reviews: product.reviews } }
+        );
+    
+        res.status(200).redirect(`/products/${productId}`);
+        } 
+    catch (err) {
+        console.error('Error:', err);
+        res.status(500).send('Internal Server Error');
     }
 })
 
@@ -224,7 +267,6 @@ const collectionName = 'products';
 // Create a MongoClient instance
 const client = new MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true });
 
-// Use async/await for better handling of asynchronous operations
 async function main() {
   try {
     // Connect to the MongoDB server
@@ -232,7 +274,7 @@ async function main() {
     console.log("Connected to database.");
 
     // Access the database
-    const db = client.db(dbName);
+    db = client.db(dbName);
     //const collection = db.collection(collectionName);
 
     //const documents = await collection.find({}).toArray();

@@ -9,6 +9,8 @@ html(lang='en')
     p
       a(href='/') Return Home
     #productDetails
+      #id DB ID of Item: #{product._id}
+      br
       #id ID of Item: #{product.id}
       #name
         p Name: #{product.name}
@@ -20,14 +22,14 @@ html(lang='en')
       #stock
         p Stock: #{product.stock}
       #reviews
-        a(href="/productId="+product.id+"/reviews")
+        a(href="/productId="+product._id+"/reviews")
           p Reviews:
           each a in product.reviews 
             #reviewContents
               p Rating : #{a.Rating}
       #insertReviews
         p Add Reviews
-        form#addNewReviews(method='POST', action=`/newReview/${product.id}`)
+        form#addNewReviews(method='POST', action=`/newReview/${product._id}`)
           //input(type='hidden', name='productID', value=product.id)
           input(type='number', name='rating', placeholder='Enter your Rating (from 1 to 10)', min='0', max='10', style='width: 20em;margin-bottom:20px;')
           br
