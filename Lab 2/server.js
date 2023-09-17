@@ -24,7 +24,7 @@ let data=require('./products.json')
 //console.log(data)
 
 //creating a new collection to add review section to it
-let dataUpdate=[]
+/*let dataUpdate=[]
 for(a=0;a<data.length;a++){
     let products = { ...data[a] };
     
@@ -32,12 +32,12 @@ for(a=0;a<data.length;a++){
     products.reviews = [
         /*{
             Rating: 4
-        }*/
+        }
         
     ];
     
     dataUpdate.push(products)
-}
+}*/
 //console.log(dataUpdate)
 //default home page
 app.get('/',async (req,res)=>{
