@@ -1,0 +1,22 @@
+doctype html
+html(lang='en')
+  head
+    meta(charset='UTF-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1.0')
+    title Orderer Name #{order.name}
+    link(rel='stylesheet', href='/css/style.css')
+  body
+    p
+      a(href='/dispOrders') Return back to Order list
+    #productDetails
+      #purchaserName Name: #{order.Name}
+      #id DB ID of Order: #{order._id}
+      br
+      each a in order.order 
+        div(Style='display:flex')
+            a(href='/products/'+a.productId) 
+                p(style='padding-right:20px') Product ID: #{a.productId}
+            p(style='padding-right:20px') Purchaser Name: #{a.productName}
+            p QTY: #{a.qty}
+      if error
+        p.error= error

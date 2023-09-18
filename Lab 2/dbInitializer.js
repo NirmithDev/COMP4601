@@ -1,10 +1,3 @@
-//create a db
-//populate with data
-//do not forget to add the schema modelling of the item
-
-//fix orders and store it in separate collection called orders
-//drop collection
-
 const { MongoClient } = require('mongodb');
 const dbName = "storeDB";
 

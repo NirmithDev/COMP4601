@@ -1,0 +1,20 @@
+doctype html
+html(lang='en')
+  head
+    meta(charset='UTF-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1.0')
+    title Search Page
+    link(rel='stylesheet', href='/css/style.css')
+  body
+    a(href='/') Search Products
+    a(href='/addProduct') Add New Products
+    a(href='/placeOrder') Place Order
+    a(href='/orders') Display Orders
+    h2 View Orders
+    #outputContainer
+      if error
+        p.error= error
+      else
+        each a in searchData 
+          a(href='/orders/orderID='+a._id) 
+            p(style='width: 16em;') #{a.Name}

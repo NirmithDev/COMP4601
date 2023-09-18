@@ -11,10 +11,12 @@ html(lang='en')
         a(href='/') Search Product
       p
         a(href='/addProduct') Add a Products
+      p 
+        a(href='/orders') Display Orders
     p Place Order
     // Display error message if it exists
 
-    form(method='POST', action='/orders')
+    form(method='POST', action='/cart')
       label(for='purchaserName') Purchaser Name:
       input(type='text', name='purchaserName', required)
       button(type='submit') Place Order

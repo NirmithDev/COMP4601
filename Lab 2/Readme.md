@@ -21,15 +21,15 @@
 
 ## Lab 2
 
-1. All of your server’s data is now stored in a database -DONE
-2. The previous functionality from lab #1 still works -DONE
-3. You can create orders successfully and the database is appropriately updated
-4. Your server rejects orders that are not valid due to:
+1. All of your server’s data is now stored in a database - DONE
+2. The previous functionality from lab #1 still works - DONE
+3. You can create orders successfully and the database is appropriately updated - DONE
+4. Your server rejects orders that are not valid due to: - DONE
    a. Missing the purchaser’s name
    b. Product does not exist
    c. Product does not have enough stock
-5. You can view the list of orders that exist on the server
-6. You can view specific orders and see products that were part of the order
+5. You can view the list of orders that exist on the server - DONE
+6. You can view specific orders and see products that were part of the order - DONE
 
 ### Code Suggestions
 
