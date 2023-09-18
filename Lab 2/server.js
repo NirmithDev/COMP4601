@@ -262,7 +262,7 @@ app.post('/newReview/:pid',async (req,res)=>{
 //temporary collection to handle orders
 let orderCollection = []
 
-app.post("/newOrder/:id", async (req, res) => {
+/*app.post("/newOrder/:id", async (req, res) => {
   //console.log(req.body);
   const productId = req.params.id;
   //console.log(productId);
@@ -304,7 +304,56 @@ app.post("/newOrder/:id", async (req, res) => {
   }
 
   res.status(200).redirect(`/products/${productId}`);
+});*/
+
+app.post("/newOrder/:id", async (req, res) => {
+  const productId = req.params.id;
+  const qty = parseInt(req.body.qty);
+
+  // Find the product in the database
+  const collection = db.collection(collectionName);
+  const product = await collection.findOne({ _id: new ObjectId(productId) });
+
+  if (!product) {
+    console.log(`Product with ID ${productId} not found.`);
+    return res.status(404).send("Product not found.");
+  }
+
+  // Check if the requested quantity exceeds available stock
+  if (qty > product.stock) {
+    console.log(`Quantity exceeds available stock for product ${productId}`);
+    return res.status(409).render(`productDetails`, { product: product, error: "Quantity exceeds available stock." });
+  }
+
+  // Check if the product is already in the cart
+  const existingOrder = orderCollection.find((order) => order.productId === productId);
+
+  if (existingOrder) {
+    // If the product is already in the cart, update the quantity
+    const newQty = existingOrder.qty + qty;
+    if (newQty <= product.stock) {
+      existingOrder.qty = newQty;
+    } else {
+      return res.status(409).render(`productDetails`, {
+        product: product,
+        error: "Product exists in the cart, and requested stock exceeds current stock",
+      });
+    }
+  } else {
+    // If the product is not in the cart, add it as a new order
+    if (qty <= product.stock) {
+      orderCollection.push({ productId: productId, qty: qty });
+    } else {
+      return res.status(409).render(`productDetails`, {
+        product: product,
+        error: "Product added to the cart, but requested stock exceeds current stock",
+      });
+    }
+  }
+
+  res.status(200).redirect(`/products/${productId}`);
 });
+
 
 app.post("/orders", async (req, res) => {
   console.log(req.body);
@@ -343,9 +392,13 @@ app.post("/orders", async (req, res) => {
       if (outStock) {
         return res.status(409).send("Some items are out of stock.");
       } else {
-        //
+        //update the JSON
+        const orderObject = {
+          Name: req.body.purchaserName,
+          order: orderCollection,
+        };
         try {
-          await db.collection("orders").insertMany(orderCollection);
+          await db.collection("orders").insertOne(orderObject);
           console.log("OrderCollection stored in the 'orders' collection.");
         } catch (error) {
           console.error("Error storing orderCollection in the 'orders' collection:", error);
