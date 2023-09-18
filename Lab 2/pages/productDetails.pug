@@ -34,3 +34,21 @@ html(lang='en')
           input(type='number', name='rating', placeholder='Enter your Rating (from 1 to 10)', min='0', max='10', style='width: 20em;margin-bottom:20px;')
           br
           button(type='submit') Submit Review
+      #addToOrder 
+        p Add To Order
+        ///newOrder${product._id}
+        form#addNewReviews(method='POST', action=`/newOrder/${product._id}`)
+          //input(type='hidden', name='productID', value=product.id)
+          input(type='number', name='qty', placeholder=` Enter QTY (from 0 to ${product.stock})`, min='0', max=product.stock, style='width: 20em;margin-bottom:20px;')
+          br
+          button(type='submit') Add to Cart
+      if error
+        p.error= error
+
+
+
+
+
+
+
+

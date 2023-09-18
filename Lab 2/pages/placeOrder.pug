@@ -1,0 +1,30 @@
+doctype html
+html(lang='en')
+  head
+    meta(charset='UTF-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1.0')
+    title View orders
+    link(rel='stylesheet', href='/css/style.css')
+  body
+    div(style='display: flex;')
+      p
+        a(href='/') Search Product
+      p
+        a(href='/addProduct') Add a Products
+    p Place Order
+    // Display error message if it exists
+
+    form(method='POST', action='/orders')
+      label(for='purchaserName') Purchaser Name:
+      input(type='text', name='purchaserName', required)
+      button(type='submit') Place Order
+
+    if error
+      p.error= error
+
+    p View Orders
+    ul
+      each order in orders
+        div(Style='display:flex')
+            p(Style='padding-right:10px') Product Id : #{order.productId}
+            p Qty: #{order.qty}

@@ -6,8 +6,11 @@ html(lang='en')
     title add product page
     link(rel='stylesheet', href='/css/style.css')
   body
-    p
-      a(href='/') Return Home
+    div(style='display: flex;')
+      p
+        a(href='/') Search Product
+      p
+        a(href='/placeOrder') Place Order
     p Add New Product
     #addProductForm
       form(id='addForm' action='/products', method='POST')

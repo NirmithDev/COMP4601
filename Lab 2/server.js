@@ -6,6 +6,7 @@ const pug = require("pug");
 const { MongoClient, ObjectId } = require("mongodb");
 app.use('/css',express.static(__dirname+'/style'))
 let db;
+let dv;
 
 //middleware
 app.use(express.urlencoded({ extended: true }));
@@ -13,7 +14,6 @@ app.use(express.urlencoded({ extended: true }));
 app.set('views', './pages');
 app.set('view engine', 'pug');
 
-let orderCollection = []
 //when user adds a order it just updates it and we display it
 // when i click on the cart button it leads to a order page and 
 // get cart button page 
@@ -178,6 +178,10 @@ app.get('/productId=:rid/reviews',async (req,res)=>{
     res.status(200).render('review', { product: product });
 })
 
+app.get("/placeOrder",(req,res)=>{
+  res.status(200).render('placeOrder',{orders:orderCollection})
+})
+
 
 async function getLatestID() {
     try {
@@ -200,9 +204,7 @@ async function getLatestID() {
 app.post('/products', async (req, res) => {
     try {
         const newID = await getLatestID() + 1;
-  
-        const db = client.db(dbName);
-        const collection = db.collection(collectionName);
+        collection = db.collection(collectionName);
   
         const newProduct = {
             name: req.body.name,
@@ -257,13 +259,138 @@ app.post('/newReview/:pid',async (req,res)=>{
     }
 })
 
-//connecting to local DB
-//const { MongoClient } = require("mongodb");
+//temporary collection to handle orders
+let orderCollection = []
+
+app.post("/newOrder/:id", async (req, res) => {
+  //console.log(req.body);
+  const productId = req.params.id;
+  //console.log(productId);
+
+  // Parse the quantity from the request body
+  const qty = parseInt(req.body.qty);
+
+  // Find the index of the product in orderCollection (if it exists)
+  const existingIndex = orderCollection.findIndex((order) => order.productId === productId);
+  console.log(existingIndex)
+
+  collection = db.collection(collectionName);
+  const product = await collection.findOne({ _id: new ObjectId(productId) });
+  console.log(product)
+  if (existingIndex !== -1) {
+    if((orderCollection[existingIndex].qty + qty)<=product.stock){
+      orderCollection[existingIndex].qty += qty;
+    }else{
+      return res.status(409).render(`productDetails`,{product: product,error:"Product exist in collection and requested stock exceeds current stock"});
+    }
+  } else {
+    order = {
+      productId: productId,
+      qty: qty,
+    };
+    orderCollection.push(order);
+  }
+
+  console.log(orderCollection);
+
+  if (product) {
+    if (orderCollection.reduce((total, order) => total + order.qty, 0) > product.stock) {
+      console.log(`Quantity exceeds available stock for product ${productId}`);
+      return res.status(409).send("Quantity exceeds available stock.");
+    }
+  } else {
+    console.log(`Product with ID ${productId} not found.`);
+    return res.status(404).send("Product not found.");
+  }
+
+  res.status(200).redirect(`/products/${productId}`);
+});
+
+app.post("/orders", async (req, res) => {
+  console.log(req.body);
+  console.log(orderCollection);
+  collection = db.collection(collectionName);
+  if (orderCollection.length === 0) {
+    // Render the template with an error message
+    return res.status(409).send("You cannot order 0 items");
+  }
+  else{
+    if(req.body.purchaserName.length === 0){
+      return res.status(409).send("You cannot order WITHOUT A PURCHASER NAME.");;
+    }else{
+      //iterate over the collection
+      let outStock = false
+      //create a collection to store all problemativ ID's and then render with 409
+      let outStockCollection = []
+      console.log("IN LOOP")
+      for(a of orderCollection){
+        //check if stock is available for item
+        console.log(a)
+        const product = await collection.findOne({ _id: new ObjectId(a.productId) });
+        console.log(a)
+        if (!product) {
+          console.log(`Product with ID ${a.productId} not found.`);
+        } else if (product.stock < a.qty) {
+          outStockCollection.push(a.productId)
+          console.log(`Insufficient stock for ${a.qty} units of ${product.name}`);
+          outStock = true;
+          break; // Exit the loop if any item is out of stock
+        } else {
+          console.log(`Stock is available for ${a.qty} units of ${product.name}`);
+        }
+        
+      }
+      if (outStock) {
+        return res.status(409).send("Some items are out of stock.");
+      } else {
+        //
+        try {
+          await db.collection("orders").insertMany(orderCollection);
+          console.log("OrderCollection stored in the 'orders' collection.");
+        } catch (error) {
+          console.error("Error storing orderCollection in the 'orders' collection:", error);
+          // Handle the error as needed
+        }
+        // Update the database and remove items from orderCollection
+        for (const a of orderCollection) {
+          const product = await collection.findOne({ _id: new ObjectId(a.productId) });
+
+          if (product) {
+            const updatedStock = product.stock - a.qty;
+
+            try {
+              // Update the stock in the database
+              await collection.updateOne(
+                { _id: new ObjectId(a.productId) },
+                { $set: { stock: updatedStock } }
+              );
+
+              console.log(`Stock updated for ${a.qty} units of ${product.name}`);
+            } catch (error) {
+              console.error(`Error updating stock for ${a.qty} units of ${product.name}: ${error}`);
+              // Handle the error as needed
+            }
+          }
+        }
+        
+        // Clear the orderCollection
+        orderCollection = [];
+        
+        // Render the template with a 201 Created status code and success message
+        return res.status(201).render('placeOrder', { orders: orderCollection, error: "Order Created successfully" });
+      }
+    }
+  }
+});
+
+
 
 // Define the MongoDB connection URL and database name
 const url = "mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.10.6";
 const dbName = "storeDB";
+
 const collectionName = 'products';
+const dbCollectionOrder = "orders";
 // Create a MongoClient instance
 const client = new MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true });
 

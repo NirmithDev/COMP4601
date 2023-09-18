@@ -21,8 +21,8 @@
 
 ## Lab 2
 
-1. All of your server’s data is now stored in a database
-2. The previous functionality from lab #1 still works
+1. All of your server’s data is now stored in a database -DONE
+2. The previous functionality from lab #1 still works -DONE
 3. You can create orders successfully and the database is appropriately updated
 4. Your server rejects orders that are not valid due to:
    a. Missing the purchaser’s name

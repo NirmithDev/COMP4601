@@ -30,7 +30,7 @@ async function main() {
 
     // Your database operations here, e.g., inserting, querying, and updating documents
     const productsData = require("./products.json"); // Load your product data from a JSON file
-
+    //const orderData = require("./orderCollection")
     // Modify the product data to ensure reviews field is an empty array
     const modifiedProductsData = productsData.map(product => ({
       ...product,
@@ -41,6 +41,12 @@ async function main() {
     const productsCollection = db.collection("products");
     const insertResult = await productsCollection.insertMany(modifiedProductsData);
     console.log(`Inserted ${insertResult.insertedCount} documents into 'products' collection`);
+
+    const ordersCollection = db.collection("orders")
+    console.log("COLLECTION CREATED")
+    //const insertResult2 = await productsCollection.insertMany(modifiedProductsData);
+    //console.log(`Inserted ${insertResult2.insertedCount} documents into 'products' collection`);
+
 
   } catch (err) {
     console.error("Error connecting to the database:", err);
