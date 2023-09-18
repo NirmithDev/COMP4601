@@ -14,31 +14,6 @@ app.use(express.urlencoded({ extended: true }));
 app.set('views', './pages');
 app.set('view engine', 'pug');
 
-//when user adds a order it just updates it and we display it
-// when i click on the cart button it leads to a order page and 
-// get cart button page 
-
-
-//take in all the data from the products.json file
-let data=require('./products.json')
-//console.log(data)
-
-//creating a new collection to add review section to it
-/*let dataUpdate=[]
-for(a=0;a<data.length;a++){
-    let products = { ...data[a] };
-    
-    // Add the "reviews" property to the movie object
-    products.reviews = [
-        /*{
-            Rating: 4
-        }
-        
-    ];
-    
-    dataUpdate.push(products)
-}*/
-//console.log(dataUpdate)
 //default home page
 app.get('/',async (req,res)=>{
     const db = client.db(dbName);
@@ -119,15 +94,14 @@ app.get('/products',async (req,res)=>{
 
 //load up the product detail page - DB implemented
 app.get('/products/:id', async (req, res) => {
-    try {
-      const requestedProductId = req.params.id; // Get the product ID from the URL
-  
-      const db = client.db(dbName);
-      const collection = db.collection(collectionName);
-  
+  try {
+    const requestedProductId = req.params.id; // Get the product ID from the URL
+    const db = client.db(dbName);
+    const collection = db.collection(collectionName);
+    console.log(requestedProductId.length)
+    if(requestedProductId.length===24){
       // Find the product by _id
       const product = await collection.findOne({ _id: new ObjectId(requestedProductId) });
-  
       if (!product) {
         res.status(404).send("Product ID not found in store");
         return;
@@ -152,11 +126,41 @@ app.get('/products/:id', async (req, res) => {
           res.status(406).send('Not Acceptable');
         }
       });
-    } catch (err) {
-      console.error('Error:', err);
-      res.status(500).send('Internal Server Error');
+    }else{
+      console.log("WE ARE IN HERE")
+      console.log(typeof(requestedProductId))
+      const product = await collection.findOne({ id: parseInt(requestedProductId)});
+      if (!product) {
+        res.status(404).send("Product ID not found in store");
+        return;
+      }
+  
+      const format = req.query.format || "html";
+  
+      res.format({
+        'text/plain': function () {
+          res.status(200).send(product);
+        },
+        
+        'text/html': function () {
+          res.status(200).render('productDetails', { product: product });
+        },
+        
+        'application/json': function () {
+          res.status(200).send(product);
+        },
+        
+        default: function () {
+          res.status(406).send('Not Acceptable');
+        }
+      });
     }
-  });
+  } 
+  catch (err) {
+    console.error('Error:', err);
+    res.status(500).send('Internal Server Error');
+  }
+});
   
 
 //load add product page
@@ -182,6 +186,31 @@ app.get("/placeOrder",(req,res)=>{
   res.status(200).render('placeOrder',{orders:orderCollection})
 })
 
+app.get("/orders/orderID=:oid",async (req,res)=>{
+  orderId = req.params.oid;
+  console.log(orderId)
+  collection = db.collection(collectionOrder);
+  const orders = await collection.findOne({ _id: new ObjectId(orderId) });
+  res.status(200).render('orderDetails',{order:orders})
+})
+
+//get Display orders pages
+app.get("/orders",async (req,res)=>{
+  //get collection
+  collection2 = db.collection(collectionOrder)
+  //get all data stored and display via page results
+  const orders = await collection2.find({}).toArray();
+  console.log(orders)
+  //if collection is empty 
+  if(orders.length === 0){
+    //send error message
+    res.status(200).render('dispOrders',{error:"No Orders in Database"})
+  }
+  // otherwise display all orders
+  else{
+    res.status(200).render('dispOrders',{searchData:orders})
+  }
+})
 
 async function getLatestID() {
     try {
@@ -262,50 +291,6 @@ app.post('/newReview/:pid',async (req,res)=>{
 //temporary collection to handle orders
 let orderCollection = []
 
-/*app.post("/newOrder/:id", async (req, res) => {
-  //console.log(req.body);
-  const productId = req.params.id;
-  //console.log(productId);
-
-  // Parse the quantity from the request body
-  const qty = parseInt(req.body.qty);
-
-  // Find the index of the product in orderCollection (if it exists)
-  const existingIndex = orderCollection.findIndex((order) => order.productId === productId);
-  console.log(existingIndex)
-
-  collection = db.collection(collectionName);
-  const product = await collection.findOne({ _id: new ObjectId(productId) });
-  console.log(product)
-  if (existingIndex !== -1) {
-    if((orderCollection[existingIndex].qty + qty)<=product.stock){
-      orderCollection[existingIndex].qty += qty;
-    }else{
-      return res.status(409).render(`productDetails`,{product: product,error:"Product exist in collection and requested stock exceeds current stock"});
-    }
-  } else {
-    order = {
-      productId: productId,
-      qty: qty,
-    };
-    orderCollection.push(order);
-  }
-
-  console.log(orderCollection);
-
-  if (product) {
-    if (orderCollection.reduce((total, order) => total + order.qty, 0) > product.stock) {
-      console.log(`Quantity exceeds available stock for product ${productId}`);
-      return res.status(409).send("Quantity exceeds available stock.");
-    }
-  } else {
-    console.log(`Product with ID ${productId} not found.`);
-    return res.status(404).send("Product not found.");
-  }
-
-  res.status(200).redirect(`/products/${productId}`);
-});*/
-
 app.post("/newOrder/:id", async (req, res) => {
   const productId = req.params.id;
   const qty = parseInt(req.body.qty);
@@ -342,7 +327,9 @@ app.post("/newOrder/:id", async (req, res) => {
   } else {
     // If the product is not in the cart, add it as a new order
     if (qty <= product.stock) {
-      orderCollection.push({ productId: productId, qty: qty });
+      //, productName: 
+      console.log(product)
+      orderCollection.push({ productId: productId,productName: product.name,qty: qty });
     } else {
       return res.status(409).render(`productDetails`, {
         product: product,
@@ -355,7 +342,7 @@ app.post("/newOrder/:id", async (req, res) => {
 });
 
 
-app.post("/orders", async (req, res) => {
+app.post("/cart", async (req, res) => {
   console.log(req.body);
   console.log(orderCollection);
   collection = db.collection(collectionName);
@@ -443,7 +430,7 @@ const url = "mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTim
 const dbName = "storeDB";
 
 const collectionName = 'products';
-const dbCollectionOrder = "orders";
+const collectionOrder = "orders";
 // Create a MongoClient instance
 const client = new MongoClient(url, { useNewUrlParser: true, useUnifiedTopology: true });
 
