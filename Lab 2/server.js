@@ -303,7 +303,7 @@ app.post("/newOrder/:id", async (req, res) => {
     console.log(`Product with ID ${productId} not found.`);
     return res.status(404).send("Product not found.");
   }
-
+  //verify via server that user doesn't use 3rd party to break the said qty limit
   // Check if the requested quantity exceeds available stock
   if (qty > product.stock) {
     console.log(`Quantity exceeds available stock for product ${productId}`);
