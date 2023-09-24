@@ -1,30 +1,53 @@
 const Crawler = require("crawler");
-const url = require("url"); // Import the url module
+const url = require("url");
+const { MongoClient } = require('mongodb');
 
-let visitedUrls = new Set(); // Initialize a set to track visited URLs
-let visitedTitles = new Set(); // Initialize a set to track visited page titles
-let pageCount = 0; // Initialize a page counter
+const dbName = "fruitDB";
+const dbUrl = "mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.10.6";
 
-const c = new Crawler({
+const client = new MongoClient(dbUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+
+let visitedUrls = new Set();
+let visitedTitles = new Set();
+let pageCount = 0;
+
+let tempCollection =[]
+
+const crawler = new Crawler({
     maxConnections: 10,
-    callback: function (error, res, done) {
-        if (error) {
-            console.log(error);
-        } else {
-            let $ = res.$;
+    callback: async function (error, res, done) {
+        try {
+            if (error) {
+                console.error(error);
+                return;
+            }
 
-            // Extract content as needed
-            const title = $("title").text().trim(); // Get and trim the page title
-            //console.log("Title: " + title);
+            const $ = res.$;
+            const title = $("title").text().trim();
 
-            // Log the data type of the title variable
-            //console.log("Type of title: " + typeof(title));
-
-            // Check if the URL or title has been visited
             if (!visitedUrls.has(res.request.uri.href) || !visitedTitles.has(title)) {
+                visitedUrls.add(res.request.uri.href);
+                visitedTitles.add(title);
+                const linksText = [];
+                $("a").each(function (i, link) {
+                    linksText.push($(link).text());
+                });
+                // Extract and process data here
+
                 // Output the extracted content
                 console.log("URL: " + res.request.uri.href);
-                console.log("Keywords: " + $("meta[name=Keywords]").attr("content"));
+                const pageData = {
+                    url: res.request.uri.href,
+                    title: title,
+                    keywords: $("meta[name=Keywords]").attr("content"),
+                    description: $("meta[name=Description]").attr("content"),
+                    paragraphs: $("p").text(),
+                    linksText: linksText,
+                };
+                tempCollection.push(pageData);
+                //create a json formatter here
+
+                /*console.log("Keywords: " + $("meta[name=Keywords]").attr("content"));
                 console.log("\n\n");
                 console.log("Description: " + $("meta[name=Description]").attr("content"));
                 console.log("\n\n");
@@ -32,33 +55,65 @@ const c = new Crawler({
                 console.log("\n\n");
                 //console.log("Body: " + $("body").text());
                 console.log("Paragraphs: " + $("p").text());
-                console.log("Links Text: " + $("a").text());  
-                console.log("--------------------------------------------------");
+                console.log("Link and Paragraph Text: " + $("a").text());  
+                console.log("--------------------------------------------------");*/
                 pageCount++;
-                console.log(pageCount)
-                visitedUrls.add(res.request.uri.href); // Add the visited URL to the set
-                visitedTitles.add(title); // Add the visited title to the set
-                //console.log(visitedUrls)
-                // Find and crawl links on this page
-                let links = $("a");
-                $(links).each(function (i, link) {
+                //console.log(pageCount)
+
+                const links = $("a");
+                links.each(function (i, link) {
                     const href = $(link).attr("href");
                     if (href) {
-                        // Convert relative URLs to absolute URLs
                         const absoluteUrl = url.resolve(res.request.uri.href, href);
-                        // Queue the URL for crawling
-                        c.queue(absoluteUrl);
+                        crawler.queue(absoluteUrl);
                     }
                 });
             }
+        } catch (err) {
+            console.error("Error during crawling:", err);
+        } finally {
+            done();
         }
-        done();
     },
 });
 
-c.on('drain', function () {
-    console.log(`Crawling is complete. Total pages crawled: ${pageCount}`);
+crawler.on('drain', async function () {
+    try {
+        // Insert data into MongoDB after crawling is complete
+        //await insertDataToMongoDB();
+        console.log(`Crawling is complete. Total pages crawled: ${pageCount}`);
+        //call db and populate it
+        await insertDataDB();
+        //console.log(tempCollection.length)
+        //console.log(tempCollection)
+    } catch (err) {
+        console.error("Error during data insertion:", err);
+    } finally {
+        // Close the MongoDB connection
+        await client.close();
+    }
 });
 
+async function insertDataDB() {
+    try {
+        // Connect to the database
+        await client.connect();
+
+        // Select the database
+        const db = client.db(dbName);
+        await db.dropDatabase();
+        console.log("Dropped 'fruitDB' database.");
+        // Select the collection where you want to insert data
+        const collection = db.collection("fruitsData");
+
+        // Insert the data from tempCollection into MongoDB
+        const result = await collection.insertMany(tempCollection);
+
+        console.log(`Inserted ${result.insertedCount} documents into the database.`);
+    } catch (err) {
+        console.error("Error inserting data into MongoDB:", err);
+    }
+}
+
 // Start crawling from the seed URL
-c.queue('https://people.scs.carleton.ca/~davidmckenney/fruitgraph/N-0.html');
+crawler.queue('https://people.scs.carleton.ca/~davidmckenney/fruitgraph/N-0.html');
