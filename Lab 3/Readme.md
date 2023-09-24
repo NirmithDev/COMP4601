@@ -2,8 +2,8 @@
 
 - Crawler Requirements
 
-1. Store the content from each page within a database.
-2. Store a representation of the network of pages (i.e., which pages link to other pages) within the database. You may store this data in any format you decide is appropriate, such as incoming/outgoing link information stored within each page document, stored as a separate document, stored as a separate collection with link documents, etc.. It is advisable to read the remainder of the requirements below to inform your decisions on data structure and storage.
+1. Store the content from each page within a database. - DONE
+2. Store a representation of the network of pages (i.e., which pages link to other pages) within the database. You may store this data in any format you decide is appropriate, such as incoming/outgoing link information stored within each page document, stored as a separate document, stored as a separate collection with link documents, etc.. It is advisable to read the remainder of the requirements below to inform your decisions on data structure and storage. - IN PROGRESS
 
 3. Avoid crawling the same page more than once (i.e., do not re-visit pages).
 
