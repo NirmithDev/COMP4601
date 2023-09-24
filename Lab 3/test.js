@@ -24,7 +24,15 @@ const c = new Crawler({
             if (!visitedUrls.has(res.request.uri.href) || !visitedTitles.has(title)) {
                 // Output the extracted content
                 console.log("URL: " + res.request.uri.href);
-                console.log("Title: " + title);
+                console.log("Keywords: " + $("meta[name=Keywords]").attr("content"));
+                console.log("\n\n");
+                console.log("Description: " + $("meta[name=Description]").attr("content"));
+                console.log("\n\n");
+                console.log("Title: " + $("title").text());
+                console.log("\n\n");
+                //console.log("Body: " + $("body").text());
+                console.log("Paragraphs: " + $("p").text());
+                console.log("Links Text: " + $("a").text());  
                 console.log("--------------------------------------------------");
                 pageCount++;
                 console.log(pageCount)
