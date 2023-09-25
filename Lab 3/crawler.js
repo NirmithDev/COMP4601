@@ -1,34 +1,100 @@
-
-//Required module (install via NPM - npm install crawler)
 const Crawler = require("crawler");
+const url = require("url");
+const { MongoClient } = require('mongodb');
 
-const c = new Crawler({
-    maxConnections : 10, //use this for parallel, rateLimit for individual
-    //rateLimit: 1000,
+const dbName = "fruitDB";
+const dbUrl = "mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.10.6";
 
-    // This will be called for each crawled page
-    callback : function (error, res, done) {
-        if(error){
-            console.log(error);
-        }else{
-            let $ = res.$; //get cheerio data, see cheerio docs for info
-            let links = $("a") //get all links from page
-            $(links).each(function(i, link){
-              //Log out links
-              //In real crawler, do processing, decide if they need to be added to queue
-              console.log($(link).text() + ':  ' + $(link).attr('href'));
-            });
+const client = new MongoClient(dbUrl, { useNewUrlParser: true, useUnifiedTopology: true });
+
+let visitedUrls = new Set();
+let visitedTitles = new Set();
+let pageCount = 0;
+
+let tempCollection =[]
+
+const crawler = new Crawler({
+    maxConnections: 10,
+    callback: async function (error, res, done) {
+        try {
+            if (error) {
+                console.error(error);
+                return;
+            }
+
+            const $ = res.$;
+            const title = $("title").text().trim();
+
+            if (!visitedUrls.has(res.request.uri.href) || !visitedTitles.has(title)) {
+                visitedUrls.add(res.request.uri.href);
+                visitedTitles.add(title);
+                const linksText = [];
+                const incomingLinks = []; // Initialize for incoming links
+
+                $("a").each(function (i, link) {
+                    const href = $(link).attr("href");
+                    if (href) {
+                        const absoluteUrl = url.resolve(res.request.uri.href, href);
+                        crawler.queue(absoluteUrl);
+
+                        // Record the URL of the current page as an outgoing link
+                        linksText.push(absoluteUrl);
+
+                        // Record the URL of the current page as an incoming link for the linked page
+                        incomingLinks.push(absoluteUrl);
+                    }
+                });
+
+                // Extract and process data here
+
+                // Output the extracted content
+                console.log("URL: " + res.request.uri.href);
+                const pageData = {
+                    url: res.request.uri.href,
+                    title: title,
+                    keywords: $("meta[name=Keywords]").attr("content"),
+                    description: $("meta[name=Description]").attr("content"),
+                    paragraphs: $("p").text(),
+                    linksText: linksText,
+                    incomingLinks: incomingLinks,
+                    size:incomingLinks.length // Store incoming links
+                };
+                tempCollection.push(pageData);
+
+                pageCount++;
+            }
+        } catch (err) {
+            console.error("Error during crawling:", err);
+        } finally {
+            done();
         }
-        done();
+    },
+});
+
+crawler.on('drain', async function () {
+    try {
+        console.log(`Crawling is complete. Total pages crawled: ${pageCount}`);
+        await insertDataDB();
+    } catch (err) {
+        console.error("Error during data insertion:", err);
+    } finally {
+        await client.close();
     }
 });
 
-//Perhaps a useful event
-//Triggered when the queue becomes empty
-//There are some other events, check crawler docs
-c.on('drain',function(){
-    console.log("Done.");
-});
+async function insertDataDB() {
+    try {
+        await client.connect();
+        const db = client.db(dbName);
+        await db.dropDatabase();
+        console.log("Dropped 'fruitDB' database.");
+        const collection = db.collection("fruitsData");
+        const result = await collection.insertMany(tempCollection);
 
-//Queue a URL, which starts the crawl
-c.queue('https://people.scs.carleton.ca/~davidmckenney/fruitgraph/N-0.html');
+        console.log(`Inserted ${result.insertedCount} documents into the database.`);
+    } catch (err) {
+        console.error("Error inserting data into MongoDB:", err);
+    }
+}
+
+crawler.queue('https://people.scs.carleton.ca/~davidmckenney/fruitgraph/N-0.html');
