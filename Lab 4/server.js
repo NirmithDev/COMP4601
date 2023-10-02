@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const path=require('path')
 const app = express();
 const pug = require("pug");
+var elasticlunr = require('elasticlunr');
 const { MongoClient, ObjectId } = require("mongodb");
 app.use('/css',express.static(__dirname+'/style'))
 let db;
@@ -15,7 +16,7 @@ app.set('views', './pages');
 app.set('view engine', 'pug');
 
 app.get('/', (req,res)=>{
-    res.status(200).render('home');
+    res.status(200).render('home',{error:"Search Something"});
 })
 app.get('/popular',(req,res)=>{
     //find top 10 websites based on number of values in linksText or incomingLinks
@@ -47,6 +48,39 @@ app.get('/visit/:rid',(req,res)=>{
         res.status(404).send('Site not found in crawled DB');
     }
 })
+//lab 4
+
+const index = elasticlunr(function () {
+  this.addField('title');
+  this.addField('paragraphs');
+  this.addField('id');
+  this.setRef('id');
+});
+
+app.get('/searchPages', async (req,res)=>{
+  console.log(req.query)
+  const results = index.search(req.query.query).slice(0,10);
+  //console.log(results)
+  //get those data from local based of the name
+  const collection = db.collection(collectionName);
+  const topData = [];
+
+  for (const data of results) {
+    //console.log(data.ref);
+    try {
+      const getData = await collection.findOne({ _id: new ObjectId(data.ref) });
+      if (getData) {
+        getData.score = data.score.toFixed(2)
+        topData.push(getData);
+      }
+    } catch (err) {
+      console.error(`Error fetching data for ID ${data.ref}: ${err.message}`);
+    }
+  }
+  //console.log(topData)
+  //make them clickable and link to a new page
+  res.status(200).render('home',{topdawg:topData});
+})
 
 const url = "mongodb://127.0.0.1:27017/?directConnection=true&serverSelectionTimeoutMS=2000&appName=mongosh+1.10.6";
 const dbName = "fruitDB";
@@ -66,6 +100,22 @@ async function main() {
     const collection = db.collection(collectionName);
 
     local = await collection.find({}).toArray();
+    local.forEach((pageData)=>{
+      //console.log(pageData)
+      const doc = {
+        id: pageData._id.toString(), // Ensure id is a string
+        url: pageData.url || '', // Handle undefined or null fields by providing default values
+        title: pageData.title || '',
+        keywords: pageData.keywords || '', // Handle null values
+        description: pageData.description || '', // Handle null values
+        paragraphs: pageData.paragraphs || '', // Handle null values
+        linksText: Array.isArray(pageData.linksText) ? pageData.linksText : [], // Ensure linksText is an array
+        incomingLinks: Array.isArray(pageData.incomingLinks) ? pageData.incomingLinks : [], // Ensure incomingLinks is an array
+        size: pageData.size || 0 // Handle null or undefined values, and convert to a numeric value if needed
+      };
+      index.addDoc(doc);
+    })
+    //console.log(index)
     //console.log('Documents in the collection:', documents);
   } catch (err) {
     console.error("Error connecting to the database:", err);

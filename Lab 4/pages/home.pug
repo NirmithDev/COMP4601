@@ -9,5 +9,18 @@ html(lang='en')
     a(href='/') Home
     a(href='/popular') Popular pages
 
-    #Container 
-        p This is home page not popular enough fam
+    #SearchForm
+        form(action='/searchPages', method='get')
+            input(type='text', name='query', placeholder='Search...')
+            input(type='submit', value='Search')
+    #outputContainer
+      if error
+        p.error= error
+      else 
+        each a in topdawg 
+          a(href=a.url target="_blank")
+            #container(style="display: flex;justify-content: space-between;")
+              p Title: #{a.title} 
+              p Score: #{a.score}  
+              p Link: #{a.url}
+              br
