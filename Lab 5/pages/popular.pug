@@ -1,0 +1,17 @@
+doctype html
+html(lang='en')
+  head
+    meta(charset='UTF-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1.0')
+    title Search Page
+    link(rel='stylesheet', href='/css/style.css')
+  body
+    a(href='/') Home
+    a(href='/popular') Popular pages
+
+    #Container 
+        p TOP 10 PAGES BY INCOMING LINKS: 
+        br
+        for aB in siteData 
+            a(href=`/visit/${aB.title}`)
+                p(style='margin: 0px;') #{aB.url} (#{aB.size})

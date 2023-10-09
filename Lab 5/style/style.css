@@ -1,0 +1,15 @@
+*{
+    background-color: black;
+    color: white;
+}
+
+a{
+    padding-right: 10px;
+}
+
+#SearchForm{
+    margin-top: 20px;
+}
+#SearchForm input{
+    margin-right: 20px;
+}

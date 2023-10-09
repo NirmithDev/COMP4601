@@ -1,0 +1,18 @@
+doctype html
+html(lang='en')
+  head
+    meta(charset='UTF-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1.0')
+    title Search Page
+    link(rel='stylesheet', href='/css/style.css')
+  body
+    a(href='/') Home
+    a(href='/popular') Popular pages
+    #dataContainer 
+        p(style='text-decoration:underline') Title: #{data.title}
+        p Keywords: #{data.keywords}
+        p Description: #{data.description}
+        p Paragraphs: #{data.paragraphs}
+        p Links: 
+        for ab in strippedIncomingLinks
+            a(href=`/visit/${ab}`) #{ab}
