@@ -17,3 +17,7 @@
 1. Term frequency
 2. Depends on rarity of word
 3. they are multiplied together and sorted in descending order
+
+### Grade
+Approved by professor
+5/5
