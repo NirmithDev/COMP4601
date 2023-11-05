@@ -1,0 +1,27 @@
+doctype html
+html(lang='en')
+    head
+        link(rel='stylesheet' href='/css/style.css')
+        title Header
+
+    body
+        #Results
+            each page in results
+                br
+                br
+                #SquareBorder
+                    if type == 'fruits'
+                        a(href=`fruits/${page._id}`, class='link_header') #{page.title}
+                    if type == 'personal'
+                        a(href=`personal/${page._id}`, class='link_header') #{page.title}
+                    br
+                    p(class='inline') Search Score: #{page.searchscore.toFixed(2)}
+                    p Page Rank: #{page.pr}
+                    a(href=page.url) #{page.url}
+                    br
+                    if type == 'personal'
+                        a(href=`personal/${page._id}`, class='button') Info
+                        //- a(href=`personal/${page._id}/JSON`, class='button') JSON
+                    if type == 'fruits'
+                        a(href=`fruits/${page._id}`, class='button') Info
+                        //- a(href=`fruits/${page._id}/JSON`, class='button') JSON

@@ -1,0 +1,38 @@
+doctype html
+html(lang='en')
+    head
+        link(rel='stylesheet' href='/css/style.css')
+        title Header
+
+    body
+        #Page
+            h1(class='page_title') #{page.title}
+            p(class='inline_close') Page URL: 
+            a(href=page.url) #{page.url}
+            if type == 'fruits'
+                h2 Incoming Links (#{page.incomingLinks})
+                each link in page.connectedPages 
+                    a(href=link) #{link}
+                    br
+                h2 Outgoing Links (#{page.outgoingLinks})
+                each link in page.connectedPages 
+                    a(href=link) #{link}
+                    br
+            if type == 'personal'
+                if page.incomingLinks
+                    h2 Incoming Links (#{page.incomingLinks.length})
+                    each link in page.incomingLinks 
+                        a(href=link) #{link}
+                        br
+                else
+                    h2 Incoming Links (0)
+                if page.outgoingLinks
+                    h2 Outgoing Links (#{page.outgoingLinks.length})
+                    each link in page.outgoingLinks 
+                        a(href=link) #{link}
+                        br
+                else
+                    h2 Outgoing Links (0)
+            h2 Word Frequency
+            each count, word in page.wordCount
+                p(class='inline2') (#{word}, #{count}), 

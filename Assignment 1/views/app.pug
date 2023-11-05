@@ -1,0 +1,56 @@
+doctype html
+html(lang='en')
+    head
+        link(rel='icon', type='image/x-icon', href='/images/android-chrome-512x512.png')
+        link(rel='stylesheet' href='/css/style.css')
+        title Crawler Database
+
+    body
+        include header.pug
+        #Content
+            if search
+                include search.pug
+            if results
+                include results.pug
+            if page
+                include page.pug
+            if home
+                if fruit_pages
+                    if personal_pages
+                        #HomeContainer(class="flex-container")
+                            #FruitPages(class="flex-child")
+                                each page in fruit_pages
+                                    br
+                                    br
+                                    #SquareBorder2
+                                        if page.title.substring(0, 70).length < page.title.length
+                                            a(href=`fruits/${page._id}`, class='link_header') #{page.title.substring(0, 70)}...
+                                        else
+                                            a(href=`fruits/${page._id}`, class='link_header') #{page.title.substring(0, 70)}
+                                        br
+                                        p Page Rank: #{page.pr}
+                                        if page.url.substring(0, 80).length < page.url.length
+                                            a(href=page.url) #{page.url.substring(0, 80)}...
+                                        else
+                                            a(href=page.url) #{page.url.substring(0, 80)}
+                                        br
+                                        a(href=`fruits/${page._id}`, class='button') Info
+                                        //- a(href=`fruits/${page._id}/JSON`, class='button') JSON
+                            #PersonalPages(class="flex-child")
+                                each page in personal_pages
+                                    br
+                                    br
+                                    #SquareBorder2
+                                        if page.title.substring(0, 70).length < page.title.length
+                                            a(href=`personal/${page._id}`, class='link_header') #{page.title.substring(0, 70)}...
+                                        else
+                                            a(href=`personal/${page._id}`, class='link_header') #{page.title.substring(0, 70)}
+                                        br
+                                        p Page Rank: #{page.pr}
+                                        if page.url.substring(0, 80).length < page.url.length
+                                            a(href=page.url) #{page.url.substring(0, 80)}...
+                                        else
+                                            a(href=page.url) #{page.url.substring(0, 80)}
+                                        br
+                                        a(href=`personal/${page._id}`, class='button') Info
+                                        //- a(href=`personal/${page._id}/JSON`, class='button') JSON

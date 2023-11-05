@@ -1,0 +1,258 @@
+
+/*
+#0A2647
+#144272
+#205295
+#2C74B3
+*/
+
+body {
+    background-color: #2C74B3;
+}
+
+#Header {
+    background-color: #0A2647;
+    width:100vw;
+    position: fixed;
+    top: -35px;
+    padding-top: 15px;
+    left: 0;
+    border-radius: 40px;
+    z-index: 1;
+    border-width: 1px;
+    border-style: solid;
+    border-color: grey;
+}
+
+h1.header {
+    font-size: 40px;
+    text-align: center;
+    color: #fff;
+    margin-bottom: 5px;
+}
+
+h2 {
+    font-size: 20px;
+    color: white;
+    margin-bottom: 10px;
+}
+
+#Navigation {
+    background-color: #2C74B3;
+    position: fixed;
+    margin-top: 24px;
+    width: 100vw;
+    text-align: center;
+    display: inline-block;
+}
+
+a.header-button {
+    padding: 10px 60px;
+    display: inline-block;
+    background-color: #144272;
+    margin-left: 2px;
+    margin-right: 2px;
+    margin-top: 30px;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 10px;
+    border-width: 1px;
+    border-style: solid;
+    border-color: grey;
+}
+
+#Content {
+    padding-top: 90px;
+    display: flex;
+    flex-direction: row;
+}
+
+.TF {
+    display: none;
+}
+
+/* Define styles for unchecked radio buttons */
+.TF + label::before {
+    content: '◉'; /* Use a bullet symbol as the unchecked radio button */
+    margin-right: 5px; /* Add space between the bullet and label text */
+    color: #9c9c9c; /* Text color for unchecked labels */
+}
+  
+/* Define styles for checked radio buttons */
+.TF:checked + label::before {
+    content: '◉'; /* Use the same bullet symbol for checked radio buttons */
+    color: #0A2647; /* Text color for checked labels (green in this example) */
+}
+
+.TFLabel {
+    cursor: pointer;
+    color: white;
+    padding-left: 10px;
+    margin-bottom: 50px;
+}
+
+textarea {
+    resize: none;
+    background-color: #144272;
+    color: white;
+    margin-bottom: 10px;
+}
+
+input.submit_button {
+    padding: 5px 20px;
+    display: inline-block;
+    background-color: #144272;
+    margin-left: 4px;
+    margin-right: 4px;
+    margin-top: 5px;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 10px;
+    border-width: 1px;
+}
+
+button {
+    padding: 5px 20px;
+    display: inline-block;
+    background-color: #144272;
+    margin-left: 4px;
+    margin-right: 4px;
+    margin-top: 5px;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 10px;
+    border-width: 1px;
+}
+
+a.button {
+    -webkit-appearance: button;
+    -moz-appearance: button;
+    appearance: button;
+
+    text-decoration: none;
+
+    font-size: 13px;
+    padding: 5px 20px;
+    display: inline-block;
+    background-color: #144272;
+    margin-left: 4px;
+    margin-right: 4px;
+    margin-top: 15px;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 10px;
+    border-width: 1px;
+}
+
+input.result_limit {
+    background-color: #144272;
+    color: white;
+    font-size: 15px;
+}
+
+h2.inline {
+    float: left;
+    margin-right: 10px;
+    margin-top: 0px;
+}
+
+p.inline {
+    float: left;
+    margin-right: 50px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+
+p.inline2 {
+    float: left;
+    margin-right: 8px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+
+p.inline_close {
+    float: left;
+    margin-right: 10px;
+    margin-top: 1px;
+}
+
+
+#Results {
+    display: inline-block;
+}
+
+#Page {
+    display: inline-block;
+    padding-left: 13px;
+}
+
+.link_header {
+    font-size: 20px;
+    color: white;
+    margin-bottom: 10px;
+    text-decoration: none;
+}
+
+a {
+    color: white;
+}
+
+
+p {
+    color: white;
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+
+#SquareBorder {
+    border-width: 3px;
+    border-color: black;
+    border-style: solid;
+    border-radius: 10px;
+    padding-left: 15px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    width: 95vw;
+}
+
+#SquareBorder2 {
+    border-width: 3px;
+    border-color: black;
+    border-style: solid;
+    border-radius: 10px;
+    padding-left: 15px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    width: 47vw;
+    height: 17vh;
+}
+
+h1.page_title {
+    color: white;
+    margin-bottom: 10px;
+}
+
+#Search {
+    display: inline-block;
+}
+
+#JSON {
+    margin-top: -150px;
+}
+
+
+h2.json_header {
+    display: inline;
+}
+
+.flex-container {
+    display: flex;
+}
+
+.flex-child {
+    flex: 1;
+}  
+
+.flex-child:first-child {
+    margin-right: 20px;
+} 
