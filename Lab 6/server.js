@@ -1,4 +1,19 @@
-var fs = require("fs");
+const fs = require('fs');
+
+// Specify the path to your text file here
+const path = 'test3.txt';
+
+function readTextFileAndParse(filePath) {
+    try {
+        const fileContent = fs.readFileSync(filePath, 'utf8');
+        const lines = fileContent.trim().split('\n');
+        const data = lines.map((line) => line.trim().split(' '));
+        return data;
+    } catch (error) {
+        console.error('Error reading or parsing the file:', error);
+        return null;
+    }
+}
 
 function avg(arr) {
     if (arr.length == 0) {
@@ -6,15 +21,30 @@ function avg(arr) {
     }
 
     let sum = 0;
-    count =0
+    let len = arr.length;
     for (let i = 0; i < arr.length; i++) {
-        if(arr[i]>0){
-            sum+=parseFloat(arr[i])
-            count++
+        if (arr[i] == -1) {
+            len -= 1;
+        } else {
+            sum += parseFloat(arr[i]);
         }
     }
+    console.log(sum/len)
+    return (sum / len);
+}
 
-    return (sum / count);
+function createZeroMatrix(n, m) {
+    const matrix = [];
+
+    for (let i = 0; i < n; i++) {
+        const row = [];
+        for (let j = 0; j < m; j++) {
+            row.push(0);
+        }
+        matrix.push(row);
+    }
+
+    return matrix;
 }
 
 function sim(a, b, ratings) {
@@ -26,23 +56,28 @@ function sim(a, b, ratings) {
     let r_bavg = avg(ratings[b]);
 
     for (let i = 0; i < ratings[0].length; i++) {
-        //linking each rating per user to another
         let r_ap = ratings[a][i];
-        //console.log(r_ap)
         let r_bp = ratings[b][i];
-        //console.log(r_bp)
         if (r_ap != -1 && r_bp != -1) {
             numerator += ((r_ap - r_aavg) * (r_bp - r_bavg));
-            denominator1 += ((r_ap - r_aavg) **2);
-            denominator2 += ((r_bp - r_bavg) **2);
+            denominator1 += ((r_ap - r_aavg) * (r_ap - r_aavg));
+            denominator2 += ((r_bp - r_bavg) * (r_bp - r_bavg));
         }
     }
 
-    let result = (numerator / Math.sqrt(denominator1 * denominator2));
+    denominator1 = Math.sqrt(denominator1);
+    denominator2 = Math.sqrt(denominator2);
+
+    let denominator = (denominator1 * denominator2);
+    let result = (numerator / denominator);
     return result;
 }
 
-function pred(a, p, ratings) {
+function sortByColumn(arr, column) {
+    return arr.slice().sort((a, b) => b[column] - a[column]);
+  }
+
+function pred(a, p, ratings, neighbourhoodSize) {
     let r_aavg = avg(ratings[a]);
 
     let numerator = 0;
@@ -53,67 +88,49 @@ function pred(a, p, ratings) {
         if (b != a) {
             let r_bavg = avg(ratings[b]);
             let r_bp = ratings[b][p];
-            let temp = parseFloat(sim(a,b,ratings).toFixed(2));
+            let temp = sim(a,b,ratings);
             // console.log(temp);
             tempArr.push([temp,r_bp,r_bavg]);
         }
     }
-    console.log(tempArr)
-    //we do a little sorting
-    top = tempArr.slice().sort((a, b) => b[0] - a[0]).slice(0,2);
-    //console.log(top);
+
+    top = sortByColumn(tempArr,0).slice(0,neighbourhoodSize);
+    console.log(top);
     top.forEach(function (entry) {
         let temp = entry[0];
-        console.log(temp)
         let r_bp = entry[1];
-        console.log(r_bp)
         let r_bavg = entry[2];
-        console.log(r_bavg)
         numerator += (temp * (r_bp - r_bavg));
         denominator += temp;
     });
+
     return (parseFloat(r_aavg + (numerator / denominator)).toFixed(2));
 }
 
-//change file names over here
-const filePath = './test3.txt';
-fs.readFile(filePath, 'utf8', (err, data) => {
-    if (err) {
-        console.error(err);
-    } else {
-        //console.log(data);
-        const fileContent = fs.readFileSync(filePath, 'utf8');
-        const lines = fileContent.trim().split('\n');
-        const data = lines.map((line) => line.trim().split(' '));
-        // Extract the number of users and items
-        const N = parseInt(data[0][0]);
-        const M = parseInt(data[0][1]);
-        const rating = data.splice(3);
-        //console.log(N,M)
-        //console.log(rating)
-        //creating a zero matrix to represent the NxM matrix for results
-        results = [];
-  
-        for (i = 0; i < N; i++) {
-            results.push([]);
-            for (j = 0; j < M; j++) {
-                results[i][j] = 0;
-            }
+// Call the function to read and parse the file
+let data = readTextFileAndParse(path);
+const N = parseInt(data[0][0]);
+const M = parseInt(data[0][1]);
+const users = data[1];
+const items = data[2];
+const ratings = data.splice(3);
+
+// console.log(`N: ${N}   M: ${M}\nUsers: ${users} \nItems: ${items}`);
+// console.log(`Ratings:`);
+// console.log(ratings);
+
+let results = createZeroMatrix(N, M);
+
+for (let i = 0; i < ratings.length; i++) {
+    for (let j = 0; j < ratings[0].length; j++) {
+        curRating = ratings[i][j];
+        if (curRating == -1) {
+            results[i][j] = pred(i, j, ratings, 2);
+        } else {
+            results[i][j] = curRating;
         }
-        //console.log(zeroMatrix)
-        //results= [...zeroMatrix]
-        //have separate functions to improve readability
-        for(i=0;i<rating.length;i++){
-            for(j=0;j<rating[0].length;j++){
-                //console.log(rating[i][j])
-                curRating = rating[i][j];
-                if (curRating == -1) {
-                    results[i][j] = pred(i, j, rating);
-                } else {
-                    results[i][j] = curRating;
-                }
-            }
-        }
-        console.log(results)
     }
-});
+}
+
+console.log(`Ratings:`);
+console.log(results);
