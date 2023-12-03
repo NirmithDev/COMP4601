@@ -1,27 +1,23 @@
 const fs = require('fs');
 const path = require('path');
 
-//const neighbourhoodSize = 5;
-
 function readFile(filePath) {
     return fs.readFileSync(filePath, 'utf8');
 }
 
+// Parse the file data into a list, [height,width,matrix]
 function createMatrix(filePath) {
     const fileContent = readFile(filePath);
     const lines = fileContent.trim().split("\n");
     const data = lines.map((line) => line.trim().split(" "));
-    //console.log(data[0])
     const matrix = data.slice(3).map((row) => row.map(Number));
     const N = parseInt(data[0][0]);
     const M = parseInt(data[0][1]);
-    
-    console.log(matrix[0].length)
-    //console.log(matrix[0])
-    return [N,M,matrix]
-    //return data
+
+    return [N,M,matrix];
 }
 
+// Calculate the cosine similarity between item i and item j over every user
 function cosineSimilarity(i, j, matrix, userAverages) {
     let numerator = 0;
     let denominatorI = 0;
@@ -30,12 +26,8 @@ function cosineSimilarity(i, j, matrix, userAverages) {
     for (let u = 0; u < matrix.length; u++) {
         const r_ui = matrix[u][i];
         const r_uj = matrix[u][j];
-        //const userRatings = matrix[u];
-        //const r_ui = userRatings[i];
-        //const r_uj = userRatings[j];
         if (r_ui !== 0 && r_uj !== 0) {
             const r_uavg = userAverages[u].avg;
-            //console.log(r_uavg)
             const diffI = r_ui - r_uavg;
             const diffJ = r_uj - r_uavg;
             numerator += diffI * diffJ;
@@ -45,14 +37,14 @@ function cosineSimilarity(i, j, matrix, userAverages) {
     }
 
     const similarityDenominator = Math.sqrt(denominatorI) * Math.sqrt(denominatorJ);
-    if (similarityDenominator === 0) return 0;
+    if (similarityDenominator === 0) { return 0; }
 
-    return numerator / similarityDenominator;
+    return (numerator / similarityDenominator);
 }
 
+// Create an n x m zero matrix
 function createZeroMatrix(n, m) {
     const matrix = [];
-
     for (let i = 0; i < n; i++) {
         const row = [];
         for (let j = 0; j < m; j++) {
@@ -60,23 +52,22 @@ function createZeroMatrix(n, m) {
         }
         matrix.push(row);
     }
-
     return matrix;
 }
 
-function findNeigboursPredict(i,j,simis,matrix,neighbourhoodSize,avgs){
+// Predicts rating based on similarity between top neighbor item similarities over users
+function findNeigboursPredict(i,j,simis,ratings,neighbourhoodSize,avgs){
     let averagesForIthUser = avgs[i].avg;
     let numerator = 0;
     let denominator = 0;
     let ratedSimilarity = [];
-    for (let k = 0; k < matrix[i].length; k++) {
-        if (matrix[i][k] !== 0 && simis[k] > 0 && k !== j) {
-            ratedSimilarity.push([simis[k], matrix[i][k]]);
+    for (let k = 0; k < ratings[i].length; k++) {
+        if (ratings[i][k] !== 0 && simis[k] > 0 && k !== j) {
+            ratedSimilarity.push([simis[k], ratings[i][k]]);
         }
     }
 
     if (ratedSimilarity.length === 0) {
-        //noValidNeighbors++;
         return averagesForIthUser;
     }
 
@@ -86,106 +77,62 @@ function findNeigboursPredict(i,j,simis,matrix,neighbourhoodSize,avgs){
 
     let ratedSimilatiy = ratedSimilarity.sort((a, b) => b[0] - a[0]);
     let topNeighbors = ratedSimilatiy.slice(0,neighbourhoodSize);
-    //console.log(topNeighbors)
     topNeighbors.forEach(([similarity, r_ui]) => {
         numerator += similarity * r_ui;
         denominator += Math.abs(similarity);
     });
-    let prediction = numerator / denominator;
 
     if (denominator === 0) return averagesForIthUser;
+
+    let prediction = numerator / denominator;
     
     if (prediction > 5) {
-        //rGreaterFive++;
         return 5;
     }
     if (prediction <= 0) {
-        //rLessThanOne++;
         return 1;
     }
     return prediction;
 }
 
-function getSimis(matrixes,j,uAverage){
-    const numItems = matrixes[0].length;
-    //console.log(numItems)
-    let itemSimilarities = Array(numItems).fill(0);
-
-    for (let k = 0; k < numItems; k++) {
-        if (k !== j) {
-            let similarity = cosineSimilarity(j, k, matrixes,uAverage);
-            itemSimilarities[k] = similarity;
-        }
-    }
-    return itemSimilarities
-}
-
+// "Leave One Out" Cross Validation for our item based prediction
 function leaveOneOut(matrix){
     const N = matrix[0]
-    //console.log(matrix[0])
     const M = matrix[1]
-    //const N = parseInt(matrix[0][0]);
-    //const M = parseInt(matrix[0][1]);
-    const matrixes = matrix[2]//.slice(3).map((row) => row.map(Number));
-    const MAE = { totalErrors: 0, predictionsMade: 0 };
-    const OUTPUT = { MAE: 0, matrix: [], errors: 0, predictions: 0 };
-    //console.log(matrix[1])
-    //these are our ratings
-    //let matrixes = matrix[2]
+    const ratings = matrix[2]
+    const MAE = { totalErrors: 0, predictionsMade: 0, MAE: 0 };
     numMAE = 0;
     denMAE = 0;
-    //console.log(matrix[2][0])
-    //create a zero by zero matrix for the matrixes and whereever it reaches the zeroth value we get pcc and cosine simis
     let zeroMat = createZeroMatrix(N,M)
-    //get Sums and Number of ratings for each and all users
-    let uAverage = calculateSumsNums(matrixes)
-    //let [sums,nums,uAverage] = calculateSumsNums
-    //console.log(sums)
-    //console.log(nums)
-    //console.log(avgs)
-    //iterate over all values check if they are 0
-    for(let i=0;i<N;i++){
-        for(let j=0;j<M;j++){
-            //update the zeroMat or zeroMatrix to include the values
-            if(matrixes[i][j]===0){
-                zeroMat[i][j] = matrixes[i][j];
+    let uAverage = calculateSumsNums(ratings)
+    for(let i = 0; i < N; i++){
+        for(let j = 0; j < M; j++){
+            if(ratings[i][j] === 0){
+                zeroMat[i][j] = ratings[i][j];
             }else{
-                //UPDATE SUMS AND COUNT AND GET AVG FOR THIS USER
                 let tempAvg = uAverage[i].avg
-                let sum = uAverage[i].sum-matrixes[i][j];
+                let sum = uAverage[i].sum-ratings[i][j];
                 let count = uAverage[i].count-1;
-                if(count===0){
-                    uAverage[i].avg = 0
+                if(count === 0){
+                    uAverage[i].avg = 0;
                 }else{
-                    uAverage[i].avg = sum/count
+                    uAverage[i].avg = sum/count;
                 }
-                //temporary rating
-                let temp = matrixes[i][j];
-                //tempSum=sums[i]
-                //tempNums=nums[i]
-                //Make 0 and predict below
-                matrixes[i][j] = 0;
-                //averagesForIthUser =avgs[i]
-                //let simis //= getSimis(matrixes,j,uAverage)
-                const numItems = matrixes[0].length;
-                //console.log(numItems)
-                let simis = Array(numItems).fill(0);
+                let temp = ratings[i][j];
+                ratings[i][j] = 0;
+                let simis = Array(M).fill(0);
 
-                for (let k = 0; k < numItems; k++) {
+                for (let k = 0; k < M; k++) {
                     if (k !== j) {
-                        let similarity = cosineSimilarity(j, k, matrixes,uAverage);
-                        simis[k] = similarity;
+                        simis[k] = cosineSimilarity(j, k, ratings, uAverage);
                     }
                 }
-                //return itemSimilarities
                 
-
-                //call our find Neighbor
                 let neighbourhoodSize = 5
-                zeroMat[i][j]= findNeigboursPredict(i,j,simis,matrixes,neighbourhoodSize,uAverage)
-                matrixes[i][j] = temp;
+                zeroMat[i][j]= findNeigboursPredict(i,j,simis,ratings,neighbourhoodSize,uAverage)
+                ratings[i][j] = temp;
                 uAverage[i].avg = tempAvg;
-                const diff = Math.abs(zeroMat[i][j] - matrixes[i][j]);
+                const diff = Math.abs(zeroMat[i][j] - ratings[i][j]);
                 numMAE += diff;
                 denMAE++;
                 MAE.totalErrors += diff;
@@ -193,40 +140,29 @@ function leaveOneOut(matrix){
             }
         }
     }
-    OUTPUT.MAE = MAE.totalErrors / MAE.predictionsMade;
-    console.log(MAE.predictionsMade)
-    //console.log(zeroMat)
-    console.log(numMAE/denMAE)
+    console.log(`Number of Predictions Made = ${MAE.predictionsMade}`);
+    console.log(`MAE = ${numMAE/denMAE}`);
+    MAE.MAE = numMAE/denMAE;
     return MAE
 }
 
-//can use to calculate averages but we are cool so we do just the numbers and sums that are valid ratings
+// Calculates the sum of all item ratings for each user, and returns it in an array of objects
+/*
+    [
+        {
+            sum: sum of user's rating
+            count: number of item ratings from the user
+            avg: sum / count
+        },
+        {
+            sum: sum of user's rating
+            count: number of item ratings from the user
+            avg: sum / count
+        },
+        ...
+    ]
+*/
 function calculateSumsNums(ratings){
-    /*let sums = [];
-    let nums = [];
-    let avg = [];
-    for (let i = 0; i < ratings.length; i++) {
-        let sum = 0;
-        let count = 0;
-
-        for (let j = 0; j < userRatings.length; j++) {
-            let rating = ratings[i][j];
-            if (rating !== 0) {
-                sum += parseFloat(rating);
-                count++;
-            }
-        }
-
-        sums.push(sum)
-        nums.push(count);
-        if(count === 0){
-            avg.push(0)
-        }else{
-            avg.push(sum/count);
-        }
-        
-    }
-    return [sums,nums,avg]*/
     return ratings.map((userRatings) => {
         let sum = 0;
         let count = 0;
@@ -240,22 +176,16 @@ function calculateSumsNums(ratings){
     });
 }
 
+// Main function to calculate and output the MAE
 function main(){
-    //parsed-data-trimmed
     let filePath = path.join(__dirname, 'parsed-data-trimmed.txt');
     let matrix = createMatrix(filePath);
-    console.log(matrix[0]);
-    console.log(matrix[1]);
-    console.log(matrix[2][0]);
-    //function call to update the matrix and calculate similarities and predictions
-    //N = people first value
-    //M = items 2nd value
-    //matrix = 3rd value
-    let MAE = leaveOneOut(matrix) 
-    //let neighbors = findNeigbours(matrix, 12, 5);
-    //console.log("Neighbors: ", neighbors);
+    let MAE = leaveOneOut(matrix);
 
-    //let MAE = leaveOneOut(matrix, 5);
-    console.log("MAE from leave one out predictions: ", MAE);
+    console.log("Predictions Made = ", MAE.predictionsMade);
+    console.log("Total Error = ", MAE.totalErrors);
+    console.log("MAE = ", MAE.MAE);
 }
-main()
+
+
+main();
