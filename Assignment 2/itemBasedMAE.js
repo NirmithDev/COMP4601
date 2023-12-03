@@ -107,6 +107,8 @@ function findNeigboursPredict(i,j,simis,ratings,parameter,avgs,setting){
 }
 
 // "Leave One Out" Cross Validation for our item based prediction
+// settings = 'topK', 'threshold'
+// parameter = int or float
 function leaveOneOut(matrix, settings, parameter){
     const N = matrix[0]
     const M = matrix[1]
