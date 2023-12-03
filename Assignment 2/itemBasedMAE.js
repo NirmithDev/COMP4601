@@ -83,8 +83,11 @@ function findNeigboursPredict(i,j,simis,ratings,parameter,avgs,setting){
         let ratedSimilatiy = ratedSimilarity.sort((a, b) => b[0] - a[0]);
         neighbors = ratedSimilatiy.slice(0,parameter);
 
-    } else if (setting === 'threshold') {
+    } else if (setting === 'threshold-above') {
         let ratedSimilatiy = ratedSimilarity.filter(value => value[0] >= parameter);
+        neighbors = ratedSimilatiy;
+    } else if (setting === 'threshold-below') {
+        let ratedSimilatiy = ratedSimilarity.filter(value => value[0] <= parameter);
         neighbors = ratedSimilatiy;
     }
 
@@ -108,7 +111,7 @@ function findNeigboursPredict(i,j,simis,ratings,parameter,avgs,setting){
 
 // "Leave One Out" Cross Validation for our item based prediction
 // settings = 'topK', 'threshold'
-// parameter = int or float
+// parameter = int or
 function leaveOneOut(matrix, settings, parameter){
     const N = matrix[0]
     const M = matrix[1]

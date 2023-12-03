@@ -500,20 +500,20 @@ function thresholdExperiments(userData) {
 
 }
 
-let filePath = path.join(__dirname, 'assignment2-data.txt');
+// let filePath = path.join(__dirname, 'assignment2-data.txt');
 //let filePath = path.join(__dirname, 'Lab6Data', 'test1.txt');
-let matrix = createMatrix(filePath);
+// let matrix = createMatrix(filePath);
 
 //let neighbors = findNeigbours(matrix, 12, 5);
 //console.log("Neighbors: ", neighbors);
 
-let MAE_K = leaveOneOut(matrix, "topK", 5);
-let MAE_TG= leaveOneOut(matrix, "threshold-above", 0);
-let MAE_TL = leaveOneOut(matrix, "threshold-below", 0);
+// let MAE_K = leaveOneOut(matrix, "topK", 5);
+// let MAE_TG= leaveOneOut(matrix, "threshold-above", 0);
+// let MAE_TL = leaveOneOut(matrix, "threshold-below", 0);
 
-console.log("MAE from leave one out predictions with topK: ", MAE_K);
-console.log("MAE from leave one out predictions with threshold Above: ", MAE_TG);
-console.log("MAE from leave one out predictions with threshold Below: ", MAE_TL);
+// console.log("MAE from leave one out predictions with topK: ", MAE_K);
+// console.log("MAE from leave one out predictions with threshold Above: ", MAE_TG);
+// console.log("MAE from leave one out predictions with threshold Below: ", MAE_TL);
 
 module.exports = {leaveOneOut, createMatrix, readFile, filterReviews, findNeighbours, findNeigboursTGreater, findNeigboursTLess};
 

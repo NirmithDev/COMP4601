@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const itemBased = require("./itemBasedMAE.js");
-const userBased = require("./itemBasedMAE.js");
+const userBased = require("./UserRecommend.js");
 
 function printTable(matrix, columns) {
     const tableData = matrix.map((row) => {
@@ -16,45 +16,87 @@ function printTable(matrix, columns) {
     console.table(tableData);
 }
 
+function convertArrayToCSV(array) {
+    return array.map(row => row.join(',')).join('\n');
+}
+
 function main() {
-    const topKParameters = [2,5,10,15,20,25,30,35,40,45,50,55,50,65,70,75,80,85,90,95,100];
-    const thresholdParameters = [0, 0.05, 0.1, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1];
+    const topKParameters = [5,10,20,40,60,80,100];
+    const thresholdParameters = [0, 0.05, 0.1, 0.2, 0.4, 0.6, 0.8, 0.9, 1];
 
     let topKItemBased = [];
-    let thresholdItemBased = [];
+    let thresholdAboveItemBased = [];
+    let thresholdBelowItemBased = [];
     let topKUserBased = [];
-    let thresholdUserBased = [];
+    let thresholdAboveUserBased = [];
+    let thresholdBelowUserBased = [];
 
     const filePath = path.join(__dirname, 'parsed-data-trimmed.txt');
     const matrix = itemBased.createMatrix(filePath);
 
     for (let i = 0; i < topKParameters.length; i++) {
+        // TopK item based
+        console.time("TopKItemBased");
         let temp = itemBased.leaveOneOut(matrix, 'topK', topKParameters[i]);
-        topKItemBased.push([i, temp.MAE, temp.totalErrors, temp.predictionsMade]);
-        // temp = userBased.leaveOneOut(matrix, 'topK', topKParameters[i]);
-        // topKUserBased.push([i, temp.MAE, temp.totalErrors, temp.predictionsMade]);
+        let x = console.timeEnd("TopKItemBased");
+        topKItemBased.push([thresholdParameters[i], temp.MAE, x, temp.totalErrors, temp.predictionsMade]);
+
+        // TopK user based
+        console.time("TopKUserBased");
+        temp = userBased.leaveOneOut(matrix[2], 'topK', topKParameters[i]);
+        x = console.timeEnd("TopKUserBased");
+        topKUserBased.push([thresholdParameters[i], temp, x]);
     }
     for (let i = 0; i < thresholdParameters.length; i++) {
-        let temp = itemBased.leaveOneOut(matrix, 'threshold', thresholdParameters[i]);
-        thresholdItemBased.push([i, temp.MAE, temp.totalErrors, temp.predictionsMade]);
-        // temp = userBased.leaveOneOut(matrix, 'threshold', thresholdParameters[i]);
-        // thresholdUserBased.push([i, temp.MAE, temp.totalErrors, temp.predictionsMade]);
+        // Threshold above item based
+        console.time("ThresholdAboveItemBased");
+        let temp = itemBased.leaveOneOut(matrix, 'threshold-above', thresholdParameters[i]);
+        let x = console.timeEnd("ThresholdAboveItemBased");
+        thresholdAboveItemBased.push([thresholdParameters[i], temp.MAE, x, temp.totalErrors, temp.predictionsMade]);
+
+        // Threshold below item based
+        console.time("ThresholdBelowItemBased");
+        temp = itemBased.leaveOneOut(matrix, 'threshold-below', thresholdParameters[i]);
+        x = console.timeEnd("ThresholdBelowItemBased");
+        thresholdBelowItemBased.push([thresholdParameters[i], temp.MAE, x, temp.totalErrors, temp.predictionsMade]);
+
+        // Threshold above user base
+        console.time("ThresholdAboveUserBased");
+        temp = userBased.leaveOneOut(matrix[2], 'threshold-above', thresholdParameters[i]);
+        x = console.timeEnd("ThresholdAboveUserBased");
+        thresholdAboveUserBased.push([thresholdParameters[i], temp, x]);
+
+        // Threshold below user base
+        console.time("ThresholdBelowUserBased");
+        temp = userBased.leaveOneOut(matrix[2], 'threshold-below', thresholdParameters[i]);
+        x = console.timeEnd("ThresholdBelowUserBased");
+        thresholdBelowUserBased.push([thresholdParameters[i], temp, x]);
     }
 
     console.log('============================================================');
     console.log('Item Based:');
-    printTable(topKItemBased, ['Top K', 'MAE', 'Total Error', 'Predictions Made']);
+    printTable(topKItemBased, ['Top K', 'MAE', 'Execution Time', 'Total Error', 'Predictions Made']);
     console.log('\n');
-    printTable(thresholdItemBased, ['Threshold', 'MAE', 'Total Error', 'Predictions Made']);
+    printTable(thresholdAboveItemBased, ['Above Threshold', 'MAE', 'Execution Time', 'Total Error', 'Predictions Made']);
+    console.log('\n');
+    printTable(thresholdBelowItemBased, ['Below Threshold', 'MAE', 'Execution Time', 'Total Error', 'Predictions Made']);
     console.log('\n');
     console.log('============================================================');
     console.log('User Based:');
-    // printTable(topKUserBased, ['Top K', 'MAE', 'Total Error', 'Predictions Made']);
-    // console.log('\n');
-    // printTable(thresholdUserBased, ['Threshold', 'MAE', 'Total Error', 'Predictions Made']);
+    printTable(topKUserBased, ['Top K', 'MAE', 'Execution Time']);
+    console.log('\n');
+    printTable(thresholdAboveUserBased, ['Above Threshold', 'MAE', 'Execution Time']);
+    console.log('\n');
+    printTable(thresholdBelowUserBased, ['Below Threshold', 'MAE', 'Execution Time']);
+    console.log('\n');
     console.log('============================================================');
-    // console.log('\n\n\nThreshold:');
-    // console.table(thresholdItemBased);
+
+    fs.writeFileSync('topKItemBased', convertArrayToCSV(topKItemBased), 'utf-8');
+    fs.writeFileSync('thresholdAboveItemBased', convertArrayToCSV(thresholdAboveItemBased), 'utf-8');
+    fs.writeFileSync('thresholdBelowItemBased', convertArrayToCSV(thresholdBelowItemBased), 'utf-8');
+    fs.writeFileSync('topKUserBased', convertArrayToCSV(topKUserBased), 'utf-8');
+    fs.writeFileSync('thresholdAboveUserBased', convertArrayToCSV(thresholdAboveUserBased), 'utf-8');
+    fs.writeFileSync('thresholdBelowUserBased', convertArrayToCSV(thresholdBelowUserBased), 'utf-8');
 }
 
 main();
