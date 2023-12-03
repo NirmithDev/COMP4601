@@ -134,11 +134,16 @@ function leaveOneOut(userData, neighbourhoodSize, threshold) {
                 //Predict with threshold Neighbours approach, 1 prediction for >= threshold, 1 for <= threshold
                 let tGreaterUsers = findNeigboursTGreater(userDataCopy, i, threshold);
                 let tLessUsers = findNeigboursTLess(userDataCopy, i, threshold);
+                if(i % 50 == 0) {
+                    console.log("Length of tGreaterUsers: ", tGreaterUsers.length)
+                    console.log("Length of tLessUsers: ", tLessUsers.length)
+                }
                 let numTG = 0;
                 let denTG = 0;
                 let numTL = 0;
                 let denTL = 0;
 
+                //Calculate Numerator and Denominator for Threshold approaches
                 for (let k = 0; k < tGreaterUsers.length; k++) {
                     let userIndex = kUsers[k][0];
                     let similarity = kUsers[k][1];
@@ -150,7 +155,6 @@ function leaveOneOut(userData, neighbourhoodSize, threshold) {
                         denTG += similarity;
                     }
                 }
-
                 for (let k = 0; k < tLessUsers.length; k++) {
                     let userIndex = kUsers[k][0];
                     let similarity = kUsers[k][1];
@@ -164,10 +168,10 @@ function leaveOneOut(userData, neighbourhoodSize, threshold) {
                 }
 
 
-                //Predict with KUsers approach, valid keeps track of users that have been used to predict
+                //Predict with K Neighbours approach, valid keeps track of users that have been used to predict
                 let numK = 0;
                 let denK = 0;
-                let valid=0
+                let valid = 0;
                 for (let k = 0; k < kUsers.length; k++) {
                     if(valid == neighbourhoodSize) {
                         break;
@@ -246,6 +250,14 @@ function leaveOneOut(userData, neighbourhoodSize, threshold) {
                 if(predTLUsers <= 0.5){
                     predTLUsers = 1;
                 }
+
+                // if(i % 50 == 0) {
+                //     console.log("Rating predictions for user: ", i)
+                //     console.log("KPred: ", predKUsers)
+                //     console.log(">= Thresh: ", predTGUsers)
+                //     console.log("<= Thresh: ", predTLUsers)
+                //     console.log("Actual: ", temp)
+                // }
                     
 
                 //Get MAE Num and Den as descrived in slides
@@ -262,8 +274,8 @@ function leaveOneOut(userData, neighbourhoodSize, threshold) {
     }
 
     //Time to calculate MAE
-    console.log("Zero Count: ", zeroCount)
-    console.log("Five Count: ", fiveCount)
+    // console.log("Zero Count: ", zeroCount)
+    // console.log("Five Count: ", fiveCount)
     let MAE_K = numMAE_K / denMAE;
     let MAE_TG = numMAE_TG / denMAE;
     let MAE_TL = numMAE_TL / denMAE;
@@ -285,6 +297,10 @@ let MAE_TL = MAE.MAE_TL;
 console.log("MAE from leave one out predictions: ", MAE_K);
 console.log("MAE from leave one out predictions with threshold: ", MAE_TG);
 console.log("MAE from leave one out predictions with threshold: ", MAE_TL);
+
+module.exports = {leaveOneOut, createMatrix, readFile, filterReviews, findNeighbours, findNeigboursTGreater, findNeigboursTLess};
+
+//export {leaveOneOut, createMatrix, readFile, filterReviews, findNeighbours, findNeigboursTGreater, findNeigboursTLess};
 
 /*
 function recommendProducts(userData) {
