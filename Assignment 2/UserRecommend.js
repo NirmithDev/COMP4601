@@ -182,8 +182,6 @@ function leaveOneOut(userData, settings, parameter) {
                 }
             }
         }
-        console.log("NumMAE_K: ", numMAE_K)
-        console.log("DenMAE: ", denMAE)
         let MAE_K = numMAE_K / denMAE;
         return MAE_K;
     } else if(settings == 'threshold-above') {
