@@ -187,16 +187,21 @@ function calculateSumsNums(ratings){
 }
 
 // Main function to calculate and output the MAE
-function main(){
-    let filePath = path.join(__dirname, 'parsed-data-trimmed.txt');
-    let matrix = createMatrix(filePath);
-    let MAE = leaveOneOut(matrix, setting, parameter);
+// function main(){
+//     let filePath = path.join(__dirname, 'parsed-data-trimmed.txt');
+//     let matrix = createMatrix(filePath);
+//     let MAE = leaveOneOut(matrix, setting, parameter);
 
-    console.log(`Type: ${setting} = ${parameter}`);
-    console.log("Predictions Made = ", MAE.predictionsMade);
-    console.log("Total Error = ", MAE.totalErrors);
-    console.log("MAE = ", MAE.MAE);
-}
+//     console.log(`Type: ${setting} = ${parameter}`);
+//     console.log("Predictions Made = ", MAE.predictionsMade);
+//     console.log("Total Error = ", MAE.totalErrors);
+//     console.log("MAE = ", MAE.MAE);
+// }
 
 
-main();
+// main();
+
+module.exports = {
+    leaveOneOut,
+    createMatrix,
+};
