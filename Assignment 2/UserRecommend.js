@@ -128,7 +128,7 @@ function leaveOneOut(userData, settings, parameter) {
                     let numK = 0;
                     let denK = 0;
                     let valid = 0;
-                    for (let k = 0; k < kUsers.length; k++) {
+                    for (let k = 0; k < neighbours.length; k++) {
                         if(valid == parameter) {
                             break;
                         }
@@ -164,10 +164,7 @@ function leaveOneOut(userData, settings, parameter) {
 
                     // num/den is simply the margin of rating difference from user's average rating, add it to the average rating of user
                     // Increment margin of rating difference, Prediction complete
-                    pred += numK / denK;
-
-                    // Three predictions, one for k neighbours, one for t greater neighbours, one for t less neighbours
-                    let predKUsers = pred;
+                    predKUsers = pred + numK / denK;
 
                     // 3 Edge cases for 1 approach, 3 cases in total to handle
                     if(denK == 0){
@@ -199,12 +196,13 @@ function leaveOneOut(userData, settings, parameter) {
                 }
             }
         }
+        console.log("NumMAE_K: ", numMAE_K)
+        console.log("DenMAE: ", denMAE)
         let MAE_K = numMAE_K / denMAE;
         return MAE_K;
-    } else if(settings == 'threshold') {
+    } else if(settings == 'threshold_above') {
         
         let numMAE_TG = 0;
-        let numMAE_TL = 0;
         let denMAE = 0;
         for (let i = 0; i < userData.length; i++) {
             for (let j = 0; j < userData[i].length; j++) {
@@ -212,24 +210,19 @@ function leaveOneOut(userData, settings, parameter) {
                     let temp = userData[i][j];
                     //Make 0 and predict below
                     userDataCopy[i][j] = 0;
-                    let neighbors = findNeighbours(userDataCopy, i);
 
                     //Predict with threshold Neighbours approach, 1 prediction for >= threshold, 1 for <= threshold
                     let tGreaterUsers = findNeigboursTGreater(userDataCopy, i, parameter);
-                    let tLessUsers = findNeigboursTLess(userDataCopy, i, parameter);
                     if(i % 50 == 0) {
                         console.log("Length of tGreaterUsers: ", tGreaterUsers.length)
-                        console.log("Length of tLessUsers: ", tLessUsers.length)
                     }
                     let numTG = 0;
                     let denTG = 0;
-                    let numTL = 0;
-                    let denTL = 0;
 
                     //Calculate Numerator and Denominator for Threshold approaches
                     for (let k = 0; k < tGreaterUsers.length; k++) {
-                        let userIndex = neighbours[k][0];
-                        let similarity = neighbours[k][1];
+                        let userIndex = tGreaterUsers[k][0];
+                        let similarity = tGreaterUsers[k][1];
                         let review = userDataCopy[userIndex][j];
                         if (review != 0) {
                             let filteredReviewsB = filterReviews(userDataCopy[userIndex]);
@@ -238,9 +231,78 @@ function leaveOneOut(userData, settings, parameter) {
                             denTG += similarity;
                         }
                     }
+
+                    //Calculate average rating for user i
+                    let count = 0;
+                    let counter = 0
+                    for (let c = 0; c < userDataCopy[i].length; c++) {
+                        if (userDataCopy[i][c] > 0) {
+                            count += userDataCopy[i][c];
+                            counter++;
+                        }
+                    }
+                    count /= counter; //count is now the average review value of user
+                    let pred = count;
+
+                    // num/den is simply the margin of rating difference from user's average rating, add it to the average rating of user
+                    // Increment margin of rating difference, Prediction complete
+                    let predTGUsers = pred + numTG / denTG;
+
+                    // 3 Edge cases for 1 approach, 3 cases in total to handle
+                    if(denTG == 0){
+                        predTGUsers = pred
+                    }
+                
+                    if(predTGUsers >= 5){
+                        predTGUsers = 5;
+                    }
+                    
+                    if(predTGUsers <= 0.5){
+                        predTGUsers = 1;
+                    }
+
+                    // if(i % 50 == 0) {
+                    //     console.log("Rating predictions for user: ", i)
+                    //     console.log("KPred: ", predKUsers)
+                    //     console.log(">= Thresh: ", predTGUsers)
+                    //     console.log("<= Thresh: ", predTLUsers)
+                    //     console.log("Actual: ", temp)
+                    // }
+
+                    //Get MAE Num and Den as descrived in slides
+                    numMAE_TG += Math.abs(temp - predTGUsers);
+                    denMAE += 1;
+                    userDataCopy[i][j] = Number(temp);
+                    //userDataCopy[i][j] = Number(temp);
+                    //console.log("User Data Copy: ", userDataCopy[i][j])
+                }
+            }
+        }
+        let MAE_TG = numMAE_TG / denMAE;
+        return MAE_TG;
+    }
+    else if(settings == 'threshold_below') {
+        let numMAE_TL = 0;
+        let denMAE = 0;
+        for (let i = 0; i < userData.length; i++) {
+            for (let j = 0; j < userData[i].length; j++) {
+                if (userData[i][j] > 0) {
+                    let temp = userData[i][j];
+                    //Make 0 and predict below
+                    userDataCopy[i][j] = 0;
+
+                    //Predict with threshold Neighbours approach, 1 prediction for >= threshold, 1 for <= threshold
+                    let tLessUsers = findNeigboursTLess(userDataCopy, i, parameter);
+                    if(i % 50 == 0) {
+                        console.log("Length of tLessUsers: ", tLessUsers.length)
+                    }
+                    let numTL = 0;
+                    let denTL = 0;
+
+                    //Calculate Numerator and Denominator for Threshold approaches
                     for (let k = 0; k < tLessUsers.length; k++) {
-                        let userIndex = neighbours[k][0];
-                        let similarity = neighbours[k][1];
+                        let userIndex = tLessUsers[k][0];
+                        let similarity = tLessUsers[k][1];
                         let review = userDataCopy[userIndex][j];
                         if (review != 0) {
                             let filteredReviewsB = filterReviews(userDataCopy[userIndex]);
@@ -264,24 +326,14 @@ function leaveOneOut(userData, settings, parameter) {
 
                     // num/den is simply the margin of rating difference from user's average rating, add it to the average rating of user
                     // Increment margin of rating difference, Prediction complete
-                    let predTGUsers = pred + numTG / denTG;
                     let predTLUsers = pred + numTL / denTL;
 
-                    // 3 Edge cases for 2 approaches, 6 cases in total to handle
-                    if(denTG == 0){
-                        predTGUsers = pred
-                    }
+                    // 3 Edge cases for 1 approach
                     if(denTL == 0){
                         predTLUsers = pred
                     }
-                    if(predTGUsers >= 5){
-                        predTGUsers = 5;
-                    }
                     if(predTLUsers >= 5){
                         predTLUsers = 5;
-                    }
-                    if(predTGUsers <= 0.5){
-                        predTGUsers = 1;
                     }
                     if(predTLUsers <= 0.5){
                         predTLUsers = 1;
@@ -296,7 +348,6 @@ function leaveOneOut(userData, settings, parameter) {
                     // }
 
                     //Get MAE Num and Den as descrived in slides
-                    numMAE_TG += Math.abs(temp - predTGUsers);
                     numMAE_TL += Math.abs(temp - predTLUsers);
                     denMAE += 1;
                     userDataCopy[i][j] = Number(temp);
@@ -304,10 +355,10 @@ function leaveOneOut(userData, settings, parameter) {
                     //console.log("User Data Copy: ", userDataCopy[i][j])
                 }
             }
+
+            let MAE_TL = numMAE_TL / denMAE;
+            return MAE_TL;
         }
-        let MAE_TG = numMAE_TG / denMAE;
-        let MAE_TL = numMAE_TL / denMAE;
-        return {MAE_TG, MAE_TL};
     }
     return -1;
 }
@@ -498,14 +549,13 @@ let matrix = createMatrix(filePath);
 //let neighbors = findNeigbours(matrix, 12, 5);
 //console.log("Neighbors: ", neighbors);
 
-let MAE = leaveOneOut(matrix, 5, 0.5);
-let MAE_K = MAE.MAE_K;
-let MAE_TG = MAE.MAE_TG;
-let MAE_TL = MAE.MAE_TL;
+let MAE_K = leaveOneOut(matrix, "topK", 5);
+let MAE_TG= leaveOneOut(matrix, "threshold_above", 0.5);
+let MAE_TL = leaveOneOut(matrix, "threshold_below", 0.5);
 
-console.log("MAE from leave one out predictions: ", MAE_K);
-console.log("MAE from leave one out predictions with threshold: ", MAE_TG);
-console.log("MAE from leave one out predictions with threshold: ", MAE_TL);
+console.log("MAE from leave one out predictions wi topKt: ", MAE_K);
+console.log("MAE from leave one out predictions with threshold Above: ", MAE_TG);
+console.log("MAE from leave one out predictions with threshold Below: ", MAE_TL);
 
 module.exports = {leaveOneOut, createMatrix, readFile, filterReviews, findNeighbours, findNeigboursTGreater, findNeigboursTLess};
 
