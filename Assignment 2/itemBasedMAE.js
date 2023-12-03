@@ -1,6 +1,9 @@
 const fs = require('fs');
 const path = require('path');
 
+const setting = 'threshold';    // threshold, topK
+const parameter = 0.1;         // threshold value, or topK value
+
 function readFile(filePath) {
     return fs.readFileSync(filePath, 'utf8');
 }
@@ -55,8 +58,8 @@ function createZeroMatrix(n, m) {
     return matrix;
 }
 
-// Predicts rating based on similarity between top neighbor item similarities over users
-function findNeigboursPredict(i,j,simis,ratings,neighbourhoodSize,avgs){
+// Predicts rating based on similarity between specified neighbor item similarities over users
+function findNeigboursPredict(i,j,simis,ratings,parameter,avgs,setting){
     let averagesForIthUser = avgs[i].avg;
     let numerator = 0;
     let denominator = 0;
@@ -71,13 +74,21 @@ function findNeigboursPredict(i,j,simis,ratings,neighbourhoodSize,avgs){
         return averagesForIthUser;
     }
 
-    if (neighbourhoodSize > ratedSimilarity.length) {
-        neighbourhoodSize = ratedSimilarity.length;
+    let neighbors = [];
+    if (setting === 'topK'){
+        if (parameter > ratedSimilarity.length) {
+            parameter = ratedSimilarity.length;
+        }
+
+        let ratedSimilatiy = ratedSimilarity.sort((a, b) => b[0] - a[0]);
+        neighbors = ratedSimilatiy.slice(0,parameter);
+
+    } else if (setting === 'threshold') {
+        let ratedSimilatiy = ratedSimilarity.filter(value => value[0] >= parameter);
+        neighbors = ratedSimilatiy;
     }
 
-    let ratedSimilatiy = ratedSimilarity.sort((a, b) => b[0] - a[0]);
-    let topNeighbors = ratedSimilatiy.slice(0,neighbourhoodSize);
-    topNeighbors.forEach(([similarity, r_ui]) => {
+    neighbors.forEach(([similarity, r_ui]) => {
         numerator += similarity * r_ui;
         denominator += Math.abs(similarity);
     });
@@ -96,7 +107,7 @@ function findNeigboursPredict(i,j,simis,ratings,neighbourhoodSize,avgs){
 }
 
 // "Leave One Out" Cross Validation for our item based prediction
-function leaveOneOut(matrix){
+function leaveOneOut(matrix, settings, parameter){
     const N = matrix[0]
     const M = matrix[1]
     const ratings = matrix[2]
@@ -127,9 +138,8 @@ function leaveOneOut(matrix){
                         simis[k] = cosineSimilarity(j, k, ratings, uAverage);
                     }
                 }
-                
-                let neighbourhoodSize = 5
-                zeroMat[i][j]= findNeigboursPredict(i,j,simis,ratings,neighbourhoodSize,uAverage)
+
+                zeroMat[i][j]= findNeigboursPredict(i,j,simis,ratings,parameter,uAverage,settings)
                 ratings[i][j] = temp;
                 uAverage[i].avg = tempAvg;
                 const diff = Math.abs(zeroMat[i][j] - ratings[i][j]);
@@ -140,8 +150,8 @@ function leaveOneOut(matrix){
             }
         }
     }
-    console.log(`Number of Predictions Made = ${MAE.predictionsMade}`);
-    console.log(`MAE = ${numMAE/denMAE}`);
+    // console.log(`Number of Predictions Made = ${MAE.predictionsMade}`);
+    // console.log(`MAE = ${numMAE/denMAE}`);
     MAE.MAE = numMAE/denMAE;
     return MAE
 }
@@ -180,8 +190,9 @@ function calculateSumsNums(ratings){
 function main(){
     let filePath = path.join(__dirname, 'parsed-data-trimmed.txt');
     let matrix = createMatrix(filePath);
-    let MAE = leaveOneOut(matrix);
+    let MAE = leaveOneOut(matrix, setting, parameter);
 
+    console.log(`Type: ${setting} = ${parameter}`);
     console.log("Predictions Made = ", MAE.predictionsMade);
     console.log("Total Error = ", MAE.totalErrors);
     console.log("MAE = ", MAE.MAE);
