@@ -200,7 +200,7 @@ function leaveOneOut(userData, settings, parameter) {
         console.log("DenMAE: ", denMAE)
         let MAE_K = numMAE_K / denMAE;
         return MAE_K;
-    } else if(settings == 'threshold_above') {
+    } else if(settings == 'threshold-above') {
         
         let numMAE_TG = 0;
         let denMAE = 0;
@@ -281,7 +281,7 @@ function leaveOneOut(userData, settings, parameter) {
         let MAE_TG = numMAE_TG / denMAE;
         return MAE_TG;
     }
-    else if(settings == 'threshold_below') {
+    else if(settings == 'threshold-below') {
         let numMAE_TL = 0;
         let denMAE = 0;
         for (let i = 0; i < userData.length; i++) {
@@ -550,10 +550,10 @@ let matrix = createMatrix(filePath);
 //console.log("Neighbors: ", neighbors);
 
 let MAE_K = leaveOneOut(matrix, "topK", 5);
-let MAE_TG= leaveOneOut(matrix, "threshold_above", 0.5);
-let MAE_TL = leaveOneOut(matrix, "threshold_below", 0.5);
+let MAE_TG= leaveOneOut(matrix, "threshold-above", 0);
+let MAE_TL = leaveOneOut(matrix, "threshold-below", 0);
 
-console.log("MAE from leave one out predictions wi topKt: ", MAE_K);
+console.log("MAE from leave one out predictions with topK: ", MAE_K);
 console.log("MAE from leave one out predictions with threshold Above: ", MAE_TG);
 console.log("MAE from leave one out predictions with threshold Below: ", MAE_TL);
 
