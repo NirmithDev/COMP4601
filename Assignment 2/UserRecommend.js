@@ -30,8 +30,20 @@ function filterReviews(userA) {
     return filteredReviewsA;
 }
 
-function findNeigbours(userData, userIndex, k) {
-    let kUsers = [];
+function findNeigboursTGreater(userData, userIndex, threshold) {
+    let neighbours = findNeighbours(userData, userIndex);
+    neighbours = neighbours.filter((neighbour) => neighbour[1] >= threshold);
+    return neighbours;
+}
+
+function findNeigboursTLess(userData, userIndex, threshold) {
+    let neighbours = findNeighbours(userData, userIndex);
+    neighbours = neighbours.filter((neighbour) => neighbour[1] <= threshold);
+    return neighbours;
+}
+
+function findNeighbours(userData, userIndex) {
+    let neighbours = [];
     let userA = userData[userIndex];
     for (let i = 0; i < userData.length; i++) {
         //console.log("index:", i)
@@ -90,19 +102,22 @@ function findNeigbours(userData, userIndex, k) {
         //if(kUsers.length==5)
         //    break;
         //sim = Number(sim.toFixed(2));
-        kUsers.push([i, sim]);
+        neighbours.push([i, sim]);
         
-        
+
     }
-    kUsers = kUsers.sort((a, b) => b[1] - a[1])//.slice(0, k);
-    return kUsers;
+
+    neighbours = neighbours.sort((a, b) => b[1] - a[1])//.slice(0, k);
+    return neighbours;
 }
 
-function leaveOneOut(userData, neighbourhoodSize) {
+function leaveOneOut(userData, neighbourhoodSize, threshold) {
     let userDataCopy = userData.map((arr) => arr.slice());
 
     /* Time to calculate MAE with these variables */
-    numMAE = 0;
+    let numMAE_K = 0;
+    let numMAE_TG = 0;
+    let numMAE_TL = 0;
     denMAE = 0;
 
     let zeroCount = 0;
@@ -114,8 +129,66 @@ function leaveOneOut(userData, neighbourhoodSize) {
                 let temp = userData[i][j];
                 //Make 0 and predict below
                 userDataCopy[i][j] = 0;
-                let kUsers = findNeigbours(userDataCopy, i, neighbourhoodSize);
+                let kUsers = findNeighbours(userDataCopy, i);
 
+                //Predict with threshold Neighbours approach, 1 prediction for >= threshold, 1 for <= threshold
+                let tGreaterUsers = findNeigboursTGreater(userDataCopy, i, threshold);
+                let tLessUsers = findNeigboursTLess(userDataCopy, i, threshold);
+                let numTG = 0;
+                let denTG = 0;
+                let numTL = 0;
+                let denTL = 0;
+
+                for (let k = 0; k < tGreaterUsers.length; k++) {
+                    let userIndex = kUsers[k][0];
+                    let similarity = kUsers[k][1];
+                    let review = userDataCopy[userIndex][j];
+                    if (review != 0) {
+                        let filteredReviewsB = filterReviews(userDataCopy[userIndex]);
+                        let averageReviewB = filteredReviewsB.reduce((a, b) => a + b, 0) / filteredReviewsB.length;
+                        numTG += similarity * (review - averageReviewB);
+                        denTG += similarity;
+                    }
+                }
+
+                for (let k = 0; k < tLessUsers.length; k++) {
+                    let userIndex = kUsers[k][0];
+                    let similarity = kUsers[k][1];
+                    let review = userDataCopy[userIndex][j];
+                    if (review != 0) {
+                        let filteredReviewsB = filterReviews(userDataCopy[userIndex]);
+                        let averageReviewB = filteredReviewsB.reduce((a, b) => a + b, 0) / filteredReviewsB.length;
+                        numTL += similarity * (review - averageReviewB);
+                        denTL += similarity;
+                    }
+                }
+
+
+                //Predict with KUsers approach, valid keeps track of users that have been used to predict
+                let numK = 0;
+                let denK = 0;
+                let valid=0
+                for (let k = 0; k < kUsers.length; k++) {
+                    if(valid == neighbourhoodSize) {
+                        break;
+                    }
+
+                    let userIndex = kUsers[k][0];
+                    let similarity = kUsers[k][1];
+
+                    if (similarity < 0) {
+                        continue;
+                    }
+                    let review = userDataCopy[userIndex][j];
+                    if (review != 0) {
+                        //console.log("k user", k)
+                        valid++;
+                        let filteredReviewsB = filterReviews(userDataCopy[userIndex]);
+                        let averageReviewB = filteredReviewsB.reduce((a, b) => a + b, 0) / filteredReviewsB.length;
+                        numK += similarity * (review - averageReviewB);
+                        denK += similarity;
+                    }
+                }
                 //Calculate Average Review value of user
                 let count = 0;
                 let counter = 0
@@ -128,60 +201,59 @@ function leaveOneOut(userData, neighbourhoodSize) {
                 count /= counter; //count is now the average review value of user
                 let pred = count;
 
-                //console.log("Similar User: ", kUsers[0])
-                let num = 0;
-                let den = 0;
-                let valid=0
+                // num/den is simply the margin of rating difference from user's average rating, add it to the average rating of user
+                // Increment margin of rating difference, Prediction complete
 
-                //Predict
-                for (let k = 0; k < kUsers.length; k++) {
-                    if(valid == neighbourhoodSize) {
-                        break;
-                    }
-                    let userIndex = kUsers[k][0];
-                    let similarity = kUsers[k][1];
-                    if (similarity < 0) {
-                        continue;
-                    }
-                    let review = userDataCopy[userIndex][j];
-                    if (review != 0) {
-                        //console.log("k user", k)
-                        valid++;
-                        let filteredReviewsB = filterReviews(userDataCopy[userIndex]);
-                        let averageReviewB = filteredReviewsB.reduce((a, b) => a + b, 0) / filteredReviewsB.length;
-                        num += similarity * (review - averageReviewB);
-                        den += similarity;
-                    }
-                }/*
-                if (den == 0) {
-                    userDataCopy[i][j] = Number(temp);
-                    //console.log('afterlol123', userDataCopy[i][j])
-                    continue;
+                // Three predictions, one for k neighbours, one for t greater neighbours, one for t less neighbours
+                let predKUsers = pred + numK / denK;
+                let predTGUsers = pred + numTG / denTG;
+                let predTLUsers = pred + numTL / denTL;
+
+
+                // 3 Edge cases for 3 approaches, 9 cases in total to handle
+                if(denK == 0){
+                    predKUsers = pred
                 }
-                else {*/
-                    //Pred is simply the margin of rating difference from user's average rating, add it to the average rating of user
+                if(denTG == 0){
+                    predTGUsers = pred
+                }
+                if(denTL == 0){
+                    predTLUsers = pred
+                }
 
-                    //Increment margin of rating difference, Prediction complete
-                    let pred2 = pred + num / den;
-                    if(den ==0){
-                        pred2=pred
-                    }
-                    if (pred2 >= 5) {
-                        pred2 = 5;
-                        fiveCount++;
-                    }
-                    if (pred2 <= 0.5) {
-                        pred2 = 1;
-                        zeroCount++;
-                    }
+                if (predKUsers >= 5) {
+                    predKUsers = 5;
+                    fiveCount++;
+                }
+
+                if(predTGUsers >= 5){
+                    predTGUsers = 5;
+                }
+
+                if(predTLUsers >= 5){
+                    predTLUsers = 5;
+                }
+
+                if (predKUsers <= 0.5) {
+                    predKUsers = 1;
+                    zeroCount++;
+                }
+
+                if(predTGUsers <= 0.5){
+                    predTGUsers = 1;
+                }
+
+                if(predTLUsers <= 0.5){
+                    predTLUsers = 1;
+                }
                     
-                    //console.log("Prediction: ", pred)
-                    //onsole.log("Actual: ", temp)
 
-                    //Get MAE Num and Den as descrived in slides
-                    numMAE += Math.abs(temp - pred2);
-                    denMAE += 1;
-                    userDataCopy[i][j] = Number(temp);
+                //Get MAE Num and Den as descrived in slides
+                numMAE_K += Math.abs(temp - predKUsers);
+                numMAE_TG += Math.abs(temp - predTGUsers);
+                numMAE_TL += Math.abs(temp - predTLUsers);
+                denMAE += 1;
+                userDataCopy[i][j] = Number(temp);
                 //}
                 //userDataCopy[i][j] = Number(temp);
                 //console.log("User Data Copy: ", userDataCopy[i][j])
@@ -192,19 +264,27 @@ function leaveOneOut(userData, neighbourhoodSize) {
     //Time to calculate MAE
     console.log("Zero Count: ", zeroCount)
     console.log("Five Count: ", fiveCount)
-    let MAE = numMAE / denMAE;
-    return MAE;
+    let MAE_K = numMAE_K / denMAE;
+    let MAE_TG = numMAE_TG / denMAE;
+    let MAE_TL = numMAE_TL / denMAE;
+    return {MAE_K, MAE_TG, MAE_TL} ;
 }
 
-let filePath = path.join(__dirname, 'Lab8Data.txt');
+let filePath = path.join(__dirname, 'assignment2-data.txt');
 //let filePath = path.join(__dirname, 'Lab6Data', 'test1.txt');
 let matrix = createMatrix(filePath);
 
 //let neighbors = findNeigbours(matrix, 12, 5);
 //console.log("Neighbors: ", neighbors);
 
-let MAE = leaveOneOut(matrix, 5);
-console.log("MAE from leave one out predictions: ", MAE);
+let MAE = leaveOneOut(matrix, 5, 0.5);
+let MAE_K = MAE.MAE_K;
+let MAE_TG = MAE.MAE_TG;
+let MAE_TL = MAE.MAE_TL;
+
+console.log("MAE from leave one out predictions: ", MAE_K);
+console.log("MAE from leave one out predictions with threshold: ", MAE_TG);
+console.log("MAE from leave one out predictions with threshold: ", MAE_TL);
 
 /*
 function recommendProducts(userData) {
