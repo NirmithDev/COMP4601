@@ -98,13 +98,9 @@ function findNeighbours(userData, userIndex) {
         else {  
             sim = simNum / simDen;
         }
-        //console.log('Similarity between user ' + userIndex + ' and user ' + i + ': ' + sim);
-        //if(kUsers.length==5)
-        //    break;
-        //sim = Number(sim.toFixed(2));
+    
         neighbours.push([i, sim]);
         
-
     }
 
     neighbours = neighbours.sort((a, b) => b[1] - a[1])//.slice(0, k);
@@ -179,20 +175,10 @@ function leaveOneOut(userData, settings, parameter) {
                         predKUsers = 1;
                     }
 
-                    // if(i % 50 == 0) {
-                    //     console.log("Rating predictions for user: ", i)
-                    //     console.log("KPred: ", predKUsers)
-                    //     console.log(">= Thresh: ", predTGUsers)
-                    //     console.log("<= Thresh: ", predTLUsers)
-                    //     console.log("Actual: ", temp)
-                    // }
-
                     //Get MAE Num and Den as descrived in slides
                     numMAE_K += Math.abs(temp - predKUsers);
                     denMAE += 1;
                     userDataCopy[i][j] = Number(temp);
-                    //userDataCopy[i][j] = Number(temp);
-                    //console.log("User Data Copy: ", userDataCopy[i][j])
                 }
             }
         }
@@ -213,9 +199,6 @@ function leaveOneOut(userData, settings, parameter) {
 
                     //Predict with threshold Neighbours approach, 1 prediction for >= threshold, 1 for <= threshold
                     let tGreaterUsers = findNeigboursTGreater(userDataCopy, i, parameter);
-                    if(i % 50 == 0) {
-                        console.log("Length of tGreaterUsers: ", tGreaterUsers.length)
-                    }
                     let numTG = 0;
                     let denTG = 0;
 
@@ -261,20 +244,10 @@ function leaveOneOut(userData, settings, parameter) {
                         predTGUsers = 1;
                     }
 
-                    // if(i % 50 == 0) {
-                    //     console.log("Rating predictions for user: ", i)
-                    //     console.log("KPred: ", predKUsers)
-                    //     console.log(">= Thresh: ", predTGUsers)
-                    //     console.log("<= Thresh: ", predTLUsers)
-                    //     console.log("Actual: ", temp)
-                    // }
-
                     //Get MAE Num and Den as descrived in slides
                     numMAE_TG += Math.abs(temp - predTGUsers);
                     denMAE += 1;
                     userDataCopy[i][j] = Number(temp);
-                    //userDataCopy[i][j] = Number(temp);
-                    //console.log("User Data Copy: ", userDataCopy[i][j])
                 }
             }
         }
@@ -293,9 +266,6 @@ function leaveOneOut(userData, settings, parameter) {
 
                     //Predict with threshold Neighbours approach, 1 prediction for >= threshold, 1 for <= threshold
                     let tLessUsers = findNeigboursTLess(userDataCopy, i, parameter);
-                    if(i % 50 == 0) {
-                        console.log("Length of tLessUsers: ", tLessUsers.length)
-                    }
                     let numTL = 0;
                     let denTL = 0;
 
@@ -339,20 +309,10 @@ function leaveOneOut(userData, settings, parameter) {
                         predTLUsers = 1;
                     }
 
-                    // if(i % 50 == 0) {
-                    //     console.log("Rating predictions for user: ", i)
-                    //     console.log("KPred: ", predKUsers)
-                    //     console.log(">= Thresh: ", predTGUsers)
-                    //     console.log("<= Thresh: ", predTLUsers)
-                    //     console.log("Actual: ", temp)
-                    // }
-
                     //Get MAE Num and Den as descrived in slides
                     numMAE_TL += Math.abs(temp - predTLUsers);
                     denMAE += 1;
                     userDataCopy[i][j] = Number(temp);
-                    //userDataCopy[i][j] = Number(temp);
-                    //console.log("User Data Copy: ", userDataCopy[i][j])
                 }
             }
 
