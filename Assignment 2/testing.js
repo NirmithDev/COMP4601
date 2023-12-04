@@ -36,40 +36,40 @@ function main() {
 
     for (let i = 0; i < topKParameters.length; i++) {
         // TopK item based
-        console.time("TopKItemBased");
+        let start = Date.now();
         let temp = itemBased.leaveOneOut(matrix, 'topK', topKParameters[i]);
-        let x = console.timeEnd("TopKItemBased");
-        topKItemBased.push([thresholdParameters[i], temp.MAE, x, temp.totalErrors, temp.predictionsMade]);
+        let x = Date.now() - start;
+        topKItemBased.push([topKParameters[i], temp.MAE, x, temp.totalErrors, temp.predictionsMade]);
 
         // TopK user based
-        console.time("TopKUserBased");
+        start = Date.now();
         temp = userBased.leaveOneOut(matrix[2], 'topK', topKParameters[i]);
-        x = console.timeEnd("TopKUserBased");
-        topKUserBased.push([thresholdParameters[i], temp, x]);
+        x = Date.now() - start;
+        topKUserBased.push([topKParameters[i], temp, x]);
     }
     for (let i = 0; i < thresholdParameters.length; i++) {
         // Threshold above item based
-        console.time("ThresholdAboveItemBased");
+        start = Date.now();
         let temp = itemBased.leaveOneOut(matrix, 'threshold-above', thresholdParameters[i]);
-        let x = console.timeEnd("ThresholdAboveItemBased");
+        let x = Date.now() - start;
         thresholdAboveItemBased.push([thresholdParameters[i], temp.MAE, x, temp.totalErrors, temp.predictionsMade]);
 
         // Threshold below item based
-        console.time("ThresholdBelowItemBased");
+        start = Date.now();
         temp = itemBased.leaveOneOut(matrix, 'threshold-below', thresholdParameters[i]);
-        x = console.timeEnd("ThresholdBelowItemBased");
+        x = Date.now() - start;
         thresholdBelowItemBased.push([thresholdParameters[i], temp.MAE, x, temp.totalErrors, temp.predictionsMade]);
 
         // Threshold above user base
-        console.time("ThresholdAboveUserBased");
+        start = Date.now();
         temp = userBased.leaveOneOut(matrix[2], 'threshold-above', thresholdParameters[i]);
-        x = console.timeEnd("ThresholdAboveUserBased");
+        x = Date.now() - start;
         thresholdAboveUserBased.push([thresholdParameters[i], temp, x]);
 
         // Threshold below user base
-        console.time("ThresholdBelowUserBased");
+        start = Date.now();
         temp = userBased.leaveOneOut(matrix[2], 'threshold-below', thresholdParameters[i]);
-        x = console.timeEnd("ThresholdBelowUserBased");
+        x = Date.now() - start;
         thresholdBelowUserBased.push([thresholdParameters[i], temp, x]);
     }
 
